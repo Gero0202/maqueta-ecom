@@ -114,6 +114,14 @@ DELETE /api/cart/items/[productId]
 
 - Elimina item.
 
+---
+
+# Especificas
+
+- Cambiar las **cateogrias** en api/products/route.ts -> POST 
+
+---
+
 # Querys 
 
 -- ==========================

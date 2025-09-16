@@ -4,7 +4,7 @@ import { Product } from "@/app/types/Product";
 import { NextResponse } from "next/server";
 
 interface UpdateData {
-    title?: string;
+    name?: string;
     description?: string;
     price?: number;
     stock?: number;
@@ -38,7 +38,7 @@ export async function GET(req: Request, context: RouteParams) {
         const result = await pool.query(
             `SELECT 
                 product_id,
-                title,
+                name,
                 description,
                 price,
                 stock,
@@ -54,7 +54,7 @@ export async function GET(req: Request, context: RouteParams) {
 
         if (result.rows.length === 0) {
             return NextResponse.json(
-                { message: "No se encontraron loops con ese ID" },
+                { message: "No se encontraron products con ese ID" },
                 { status: 404 }
             )
         }
@@ -66,7 +66,7 @@ export async function GET(req: Request, context: RouteParams) {
         return NextResponse.json({ product: formattedProduct }, { status: 200 })
     } catch (error) {
         return NextResponse.json(
-            { message: "No se pudo obtener el loop. error internal server" },
+            { message: "No se pudo obtener el product. error internal server" },
             { status: 500 }
         )
     }
@@ -93,10 +93,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
         }
 
 
-        const { title, description, price, stock, category, image_url } = (await req.json()) as UpdateData;
+        const { name, description, price, stock, category, image_url } = (await req.json()) as UpdateData;
 
         const fields = {
-            title,
+            name,
             description,
             price,
             stock,
@@ -105,7 +105,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
             updated_at: new Date(),
         };
 
-        if (title && title.length > 255)
+        if (name && name.length > 255)
             return NextResponse.json(
                 { message: "El título es demasiado largo" },
                 { status: 400 }
@@ -154,7 +154,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
         const values = entries.map(([_, value]) => value)
 
         const sql = `UPDATE products SET ${setClause} WHERE product_id = $${entries.length + 1
-            } RETURNING product_id, title, description, price, stock, category, image_url`;
+            } RETURNING product_id, name, description, price, stock, category, image_url`;
 
         const result = await pool.query(sql, [...values, productId]);
 

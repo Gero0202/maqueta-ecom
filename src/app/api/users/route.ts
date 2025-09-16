@@ -4,14 +4,14 @@ import { hashpassword } from "@/app/lib/hash";
 import { NextResponse } from "next/server";
 
 interface UserData {
-    username: string,
-    name: string,
-    email: string,
-    password: string,
-    avatar?: string,
-    bio?: string,
-    role?: string | "user"
-    is_verified: boolean
+    username: string;
+    name: string;
+    email: string;
+    password: string;
+    avatar?: string;
+    phone?: string;
+    role?: "customer" | "admin" | "seller";
+    is_verified?: boolean;
 }
 
 
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
                 u.name,
                 u.email,
                 u.avatar,
-                u.bio,
+                u.phone,
                 u.role,
                 u.created_at,
                 u.phone,
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const auth = await requireRole(['admin'])
-        const { name, username, email, password, avatar, bio, role, is_verified } = (await req.json()) as UserData
+        const { name, username, email, password, avatar, phone, role, is_verified } = (await req.json()) as UserData
 
         if (!name || !username || username.length > 50 || !email || !password) {
             return NextResponse.json(
@@ -99,36 +99,47 @@ export async function POST(req: Request) {
         const finalAvatar = avatar || defaultAvatar
 
         const finalRole = role || "customer"
-        const verified = is_verified ?? false
+        const verified = true
 
-        const columns = ['name', 'username', 'email', 'password', 'avatar', 'bio', 'role', 'is_verified']
-        const placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7']
-        const values = [name, username, email, hashedPassowrd, finalAvatar, bio, role, verified]
+        const ipAddress = "admin-created";
 
-        const filteredColumns = []
-        const filteredPlaceholders = []
-        const filteredValues = []
+        const userData = {
+            name,
+            username,
+            email,
+            password: hashedPassowrd,
+            avatar: finalAvatar,
+            phone: phone || null,
+            role: finalRole,
+            is_verified: verified,
+            verify_code: null,
+            ip_address: ipAddress,
+            created_at: new Date(),
+            updated_at: new Date(),
+        };
 
-        for (let i = 0; i < columns.length; i++) {
+        // Filtrar solo valores definidos
+        const columns = Object.keys(userData);
+        const values = Object.values(userData);
+        const filteredColumns: string[] = [];
+        const filteredValues: any[] = [];
+        const placeholders: string[] = [];
+
+        for (let i = 0; i < values.length; i++) {
             if (values[i] !== undefined && values[i] !== null) {
-                filteredColumns.push(columns[i])
-                filteredPlaceholders.push(`$${filteredValues.length + 1}`)
-                filteredValues.push(values[i])
+                filteredColumns.push(columns[i]);
+                placeholders.push(`$${filteredValues.length + 1}`);
+                filteredValues.push(values[i]);
             }
         }
 
-        if (filteredColumns.length === 0) {
-            return NextResponse.json(
-                { message: "No se porpocionaron datos validos para crear el usuario." },
-                { status: 400 }
-            )
-        }
+        const sql = `INSERT INTO users (${filteredColumns.join(", ")})
+                     VALUES (${placeholders.join(", ")})
+                     RETURNING user_id, username, name, email, role, avatar, phone, is_verified`;
 
-        const sql = `INSERT INTO users (${filteredColumns.join(', ')}) VALUES (${filteredPlaceholders.join(', ')}) RETURNING user_id, username ,name, email, role, bio;`
+        const result = await pool.query(sql, filteredValues);
 
-        const result = await pool.query(sql, filteredValues)
-
-        return NextResponse.json(result.rows[0], { status: 201 })
+        return NextResponse.json(result.rows[0], { status: 201 });
     } catch (error) {
         const isDatabaseError = (e: any): e is { code: string; constraint: string } => {
             return (

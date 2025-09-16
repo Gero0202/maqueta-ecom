@@ -79,6 +79,24 @@ export async function POST(req: Request) {
             );
         }
 
+        const allowedCategories = ["accesorios", "ropa", "libros", "musica"];
+        if (!allowedCategories.includes(category)) {
+            return NextResponse.json(
+                { message: `Categoría no válida. Solo se permiten: ${allowedCategories.join(", ")}` },
+                { status: 400 }
+            );
+        }
+
+        if (image_url) {
+            const validExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
+            if (!validExtensions.test(image_url)) {
+                return NextResponse.json(
+                    { message: "Formato de imagen no válido. Solo se permiten jpg, jpeg, png, gif, webp." },
+                    { status: 400 }
+                );
+            }
+        }
+
         const productData = {
             name,
             description,
