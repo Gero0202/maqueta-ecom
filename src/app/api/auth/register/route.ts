@@ -127,7 +127,7 @@ export async function POST(req: Request) {
 
         } catch (error) {
             await client.query('ROLLBACK');
-
+            console.error("❌ Error en register:", error); // 👈 agrega esto
 
             return NextResponse.json(
                 { message: "Error interno del servidor al registrar usuario." },

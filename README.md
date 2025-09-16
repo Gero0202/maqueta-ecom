@@ -41,11 +41,11 @@ CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
 
 Notas:
 
-  - unit_price guarda precio al momento de agregar (snapshot) para evitar que cambios de precio alteren orders antiguas.
+    - unit_price guarda precio al momento de agregar (snapshot) para evitar que cambios de precio alteren orders antiguas.
 
-  - status='active' define el carrito que el usuario está usando actualmente. Cuando la orden se crea, se marca status='converted'.
+    - status='active' define el carrito que el usuario está usando actualmente. Cuando la orden se crea, se marca status='converted'.
 
-  - ON DELETE CASCADE asegura que si se borra el carrito se borren sus items.
+    - ON DELETE CASCADE asegura que si se borra el carrito se borren sus items.
 
 
 Reglas de noegcio:
@@ -113,3 +113,110 @@ PUT /api/cart/items/[productId]
 DELETE /api/cart/items/[productId]
 
 - Elimina item.
+
+# Querys 
+
+-- ==========================
+-- 1. USERS
+-- ==========================
+CREATE TABLE users (
+  user_id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  avatar TEXT,
+  role VARCHAR(20) DEFAULT 'customer', -- 'customer' | 'admin' | 'seller'
+  phone VARCHAR(40),
+  bio TEXT,
+  ip_address TEXT,                -- puede contener "IP no disponible" si hace falta
+  verify_code VARCHAR(6),         -- 6 dígitos generados al registrar
+  is_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_users_ip_address ON users(ip_address);
+
+
+-- ==========================
+-- 2. ADDRESSES
+-- ==========================
+CREATE TABLE addresses (
+  address_id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  street VARCHAR(255) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  state VARCHAR(100),
+  zip_code VARCHAR(20) NOT NULL,
+  country VARCHAR(100) NOT NULL,
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ==========================
+-- 3. PRODUCTS
+-- ==========================
+CREATE TABLE products (
+  product_id SERIAL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  description TEXT,
+  price NUMERIC(10,2) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  category VARCHAR(100),
+  image_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ==========================
+-- 4. CARTS
+-- ==========================
+CREATE TABLE carts (
+  cart_id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(user_id),
+  status VARCHAR(20) NOT NULL DEFAULT 'active', -- active, converted, abandoned
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ==========================
+-- 5. CART_ITEMS
+-- ==========================
+CREATE TABLE cart_items (
+  cart_item_id SERIAL PRIMARY KEY,
+  cart_id INTEGER NOT NULL REFERENCES carts(cart_id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(product_id),
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price NUMERIC(12,2) NOT NULL, -- precio snapshot al agregar
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(cart_id, product_id)
+);
+
+CREATE INDEX idx_carts_user_id ON carts(user_id);
+CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
+
+-- ==========================
+-- 6. ORDERS
+-- ==========================
+CREATE TABLE orders (
+  order_id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(user_id),
+  total NUMERIC(10,2) NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'paid', 'shipped', 'delivered', 'cancelled'
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ==========================
+-- 7. ORDER_ITEMS
+-- ==========================
+CREATE TABLE order_items (
+  order_item_id SERIAL PRIMARY KEY,
+  order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
+  product_id INT REFERENCES products(product_id),
+  quantity INT NOT NULL CHECK (quantity > 0),
+  price NUMERIC(10,2) NOT NULL
+);

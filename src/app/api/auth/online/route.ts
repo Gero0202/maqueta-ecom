@@ -13,8 +13,13 @@ export async function GET() {
             )
         }
 
-        const result = await pool.query('SELECT user_id, email, username, avatar, role, name, address, phone FROM users WHERE user_id = $1', [userPayload.user_id]);
-        const user = result.rows[0]
+        const userRes = await pool.query(
+            `SELECT user_id, email, username, avatar, role, name, phone 
+             FROM users 
+             WHERE user_id = $1`,
+            [userPayload.user_id]
+        );
+        const user = userRes.rows[0];
 
         if (!user) {
             return NextResponse.json(
@@ -23,20 +28,23 @@ export async function GET() {
             );
         }
 
+        const addrRes = await pool.query(
+            `SELECT address_id, street, city, state, zip_code, country, is_default 
+             FROM addresses 
+             WHERE user_id = $1`,
+            [userPayload.user_id]
+        );
+
+
         return NextResponse.json({
             message: 'Usuario autenticado',
             user: {
-                user_id: user.user_id,
-                email: user.email,
-                username: user.username,
-                avatar: user.avatar,
-                role: user.role,
-                name: user.name,
-                address: user.address,
-                phone: user.phone
+                ...user,
+                addresses: addrRes.rows
             }
         })
     } catch (error) {
+        console.error("❌ Error en register:", error); // 👈 agrega esto
         return NextResponse.json(
             { message: "Error interno del servidor" },
             { status: 500 }

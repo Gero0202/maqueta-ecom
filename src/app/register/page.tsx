@@ -1,6 +1,5 @@
 'use client'
 import { useState } from "react";
-import MainLayout from "../components/MainLayout";
 import styles from "@/app/styles/register.module.css"
 import { useRouter } from "next/navigation";
 import { useError } from "../context/ErrorContext";
@@ -96,7 +95,6 @@ export default function Register() {
     }
 
     return (
-        <MainLayout>
             <div className={styles["register-container"]}>
                 <form onSubmit={handleRegister} className={styles["register-form"]}>
                     <h2>Crea tu cuenta</h2>
@@ -168,6 +166,5 @@ export default function Register() {
                     </button>
                 </form>
             </div>
-        </MainLayout>
     )
 }
