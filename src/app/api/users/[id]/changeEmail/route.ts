@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/app/lib/auth";
+import { getAuthUser, requireRole } from "@/app/lib/auth";
 import pool from "@/app/lib/db";
 
 interface Params {
@@ -20,8 +20,9 @@ export async function PUT(req: Request, { params }: Params) {
         }
 
         const authUser = await getAuthUser()
+        
 
-        if (!authUser || authUser.user_id !== userId) {
+        if (!authUser || authUser.user_id !== userId && authUser.role !== "admin") {
             return NextResponse.json(
                 { message: "No autorizado" },
                 { status: 401 }

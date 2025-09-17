@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server"
-import pool  from "@/app/lib/db"
+import pool from "@/app/lib/db"
 import { getAuthUser } from "@/app/lib/auth"
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
     addressId: string
-  }
+  }>
 }
 
-// 📌 GET: obtener una dirección específica
+// 📌 GET: obtener una direccion especifica
 export async function GET(req: Request, { params }: RouteParams) {
   try {
-    const { id, addressId } = params
+    const { id, addressId } = await params
     const userId = parseInt(id, 10)
     const addrId = parseInt(addressId, 10)
 
@@ -44,10 +44,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 }
 
-// 📌 PUT: actualizar una dirección específica
+// 📌 PUT: actualizar una direcciOn especIfica
 export async function PUT(req: Request, { params }: RouteParams) {
   try {
-    const { id, addressId } = params
+    const { id, addressId } = await params
     const userId = parseInt(id, 10)
     const addrId = parseInt(addressId, 10)
 
@@ -64,15 +64,49 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 })
     }
 
-    const { street, city, state, zip } = await req.json()
+    const { street, city, state, zip_code, number_house, country } = await req.json()
+
+    const existingRes = await pool.query(
+      'SELECT street, city, state, zip_code, number_house, country FROM addresses WHERE address_id = $1 AND user_id = $2',
+      [addrId, userId]
+    );
+
+    if (existingRes.rows.length === 0) {
+      return NextResponse.json({ message: "Dirección no encontrada" }, { status: 404 });
+    }
+
+    const existingAddress = existingRes.rows[0];
+
+    const streetFinal = street?.trim() || existingAddress.street;
+    const cityFinal = city?.trim() || existingAddress.city;
+    const stateFinal = state?.trim() || existingAddress.state;
+    const zipFinal = zip_code?.trim() || existingAddress.zip_code;
+    const numberHouseFinal = number_house ?? existingAddress.number_house;
+    const countryFinal = country?.trim() || existingAddress.country;
+
+    if (streetFinal.length > 255) return NextResponse.json({ message: "Calle demasiado larga" }, { status: 400 });
+    if (cityFinal.length > 100) return NextResponse.json({ message: "Ciudad demasiado larga" }, { status: 400 });
+    if (stateFinal.length > 100) return NextResponse.json({ message: "Estado demasiado largo" }, { status: 400 });
+    if (countryFinal.length > 100) return NextResponse.json({ message: "País demasiado largo" }, { status: 400 });
+
+    const duplicateCheck = await pool.query(
+      `SELECT address_id FROM addresses 
+       WHERE user_id = $1 AND number_house = $2`,
+      [userId, numberHouseFinal]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return NextResponse.json({ message: "Ya existe una dirección con la misma calle y número" }, { status: 400 });
+    }
+
 
     const result = await pool.query(
-      `UPDATE addresses 
-       SET street = $1, city = $2, state = $3, zip = $4
-       WHERE address_id = $5 AND user_id = $6
+      `UPDATE addresses
+       SET street = $1, city = $2, state = $3, zip_code = $4, number_house = $5, country = $6, updated_at = NOW()
+       WHERE address_id = $7 AND user_id = $8
        RETURNING *`,
-      [street, city, state, zip, addrId, userId]
-    )
+      [streetFinal, cityFinal, stateFinal, zipFinal, numberHouseFinal, countryFinal, addrId, userId]
+    );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ message: "Dirección no encontrada" }, { status: 404 })
@@ -84,10 +118,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
 }
 
-// 📌 DELETE: eliminar una dirección específica
+// 📌 DELETE: eliminar una direcciOn especifica
 export async function DELETE(req: Request, { params }: RouteParams) {
   try {
-    const { id, addressId } = params
+    const { id, addressId } = await params
     const userId = parseInt(id, 10)
     const addrId = parseInt(addressId, 10)
 

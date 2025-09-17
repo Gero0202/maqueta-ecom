@@ -93,6 +93,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 })
         }
 
+        const existingEmail = await pool.query(
+            'SELECT user_id FROM users WHERE email = $1',
+            [email]
+        )
+
+        if ((existingEmail.rowCount ?? 0) > 0) {
+            return NextResponse.json(
+                { message: "El email proporcionado ya está registrado" },
+                { status: 409 }
+            )
+        }
+
         const hashedPassowrd = await hashpassword(password)
 
         const defaultAvatar = "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg"
@@ -118,7 +130,6 @@ export async function POST(req: Request) {
             updated_at: new Date(),
         };
 
-        // Filtrar solo valores definidos
         const columns = Object.keys(userData);
         const values = Object.values(userData);
         const filteredColumns: string[] = [];
