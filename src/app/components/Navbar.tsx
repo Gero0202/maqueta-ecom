@@ -20,9 +20,6 @@ export default function Navbar() {
           <Link href="">Contáctanos</Link>
         </li>
 
-        <li>
-          <Link href="">🛒</Link>
-        </li>
 
         {/* Autenticación */}
         {!currentUser ? (
@@ -36,6 +33,9 @@ export default function Navbar() {
           </>
         ) : (
           <>
+            <li>
+              <Link href="/cart">🛒</Link>
+            </li>
             <li>
               <button onClick={logout}>Cerrar sesión</button>
             </li>
