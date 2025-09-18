@@ -10,14 +10,14 @@ import toast from "react-hot-toast";
 export default function Register() {
     const { showError } = useError()
     const [loading, setLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    // const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [form, setForm] = useState({
         username: "",
         name: "",
         email: "",
         password: "",
         avatar: "",
-        bio: ""
+        phone: ""
     })
     const router = useRouter()
 
@@ -30,7 +30,7 @@ export default function Register() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
-        setErrorMessage(null)
+        // setErrorMessage(null)
 
 
         if (!form.username || form.username.length < 3 || form.username.length > 50) {
@@ -49,18 +49,23 @@ export default function Register() {
             return;
         }
 
-        if (!form.password || form.password.length < 6) {
+        if (!form.password || form.password.length < 8) {
             showError("La contraseña debe contener al menos 6 caracteres.");
             return;
         }
 
 
-        if (form.bio.length > 200) {
-            showError("La biografía no puede tener más de 200 caracteres.")
+        if (!form.phone) {
+            showError("El teléfono es obligatorio.");
+            return;
+        }
+
+        if (form.phone.length > 40) {
+            showError("El teléfono no puede tener más de 40 caracteres.")
             return
         }
 
-        if (form.avatar) { // Solo valida si el campo avatar no está vacío
+        if (form.avatar) {
             const imageUrlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)\.(jpg|jpeg|png)$/i;
             if (!imageUrlRegex.test(form.avatar)) {
                 showError("La URL del avatar debe ser una imagen .jpg, .jpeg o .png válida.");
@@ -95,76 +100,76 @@ export default function Register() {
     }
 
     return (
-            <div className={styles["register-container"]}>
-                <form onSubmit={handleRegister} className={styles["register-form"]}>
-                    <h2>Crea tu cuenta</h2>
+        <div className={styles["register-container"]}>
+            <form onSubmit={handleRegister} className={styles["register-form"]}>
+                <h2>Crea tu cuenta</h2>
 
-                    {errorMessage && (
-                        <p className={styles["error-mensaje-formulario"]}>{errorMessage}</p>
-                    )}
+                {/* {errorMessage && (
+                    <p className={styles["error-mensaje-formulario"]}>{errorMessage}</p>
+                )} */}
 
-                    <input
-                        type="text"
-                        onChange={handleChange}
-                        name="name"
-                        value={form.name}
-                        placeholder="Nombre"
-                        className={styles["input-register"]}
-                        required
-                    />
+                <input
+                    type="text"
+                    onChange={handleChange}
+                    name="name"
+                    value={form.name}
+                    placeholder="Nombre"
+                    className={styles["input-register"]}
+                    required
+                />
 
-                    <input
-                        type="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        name="email"
-                        placeholder="Email"
-                        className={styles["input-register"]}
-                        required
-                    />
+                <input
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    name="email"
+                    placeholder="Email"
+                    className={styles["input-register"]}
+                    required
+                />
 
-                    <input
-                        type="text"
-                        onChange={handleChange}
-                        value={form.username}
-                        name="username"
-                        placeholder="Nombre de usuario"
-                        className={styles["input-register"]}
-                        required
-                    />
+                <input
+                    type="text"
+                    onChange={handleChange}
+                    value={form.username}
+                    name="username"
+                    placeholder="Nombre de usuario"
+                    className={styles["input-register"]}
+                    required
+                />
 
-                    <input
-                        type="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        name="password"
-                        placeholder="Contraseña"
-                        className={styles["input-register"]}
-                        required
-                    />
+                <input
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    name="password"
+                    placeholder="Contraseña"
+                    className={styles["input-register"]}
+                    required
+                />
 
-                    <input
-                        type="text"
-                        value={form.avatar}
-                        onChange={handleChange}
-                        name="avatar"
-                        placeholder="Foto de perfil (URL de imagen)"
-                        className={styles["input-register"]}
-                    />
+                <input
+                    type="text"
+                    value={form.avatar}
+                    onChange={handleChange}
+                    name="avatar"
+                    placeholder="Foto de perfil (URL de imagen)"
+                    className={styles["input-register"]}
+                />
 
-                    <input
-                        type="text"
-                        value={form.bio}
-                        onChange={handleChange}
-                        name="bio"
-                        placeholder="Biografia"
-                        className={styles["input-register"]}
-                    />
+                <input
+                    type="text"
+                    value={form.phone}
+                    onChange={handleChange}
+                    name="phone"
+                    placeholder="Phone"
+                    className={styles["input-register"]}
+                />
 
-                    <button type="submit" className={styles["register-button"]} disabled={loading}>
-                        {loading ? "Registrando..." : "Enviar"}
-                    </button>
-                </form>
-            </div>
+                <button type="submit" className={styles["register-button"]} disabled={loading}>
+                    {loading ? "Registrando..." : "Enviar"}
+                </button>
+            </form>
+        </div>
     )
 }

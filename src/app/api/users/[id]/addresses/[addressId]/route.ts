@@ -77,12 +77,12 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     const existingAddress = existingRes.rows[0];
 
-    const streetFinal = street?.trim() || existingAddress.street;
-    const cityFinal = city?.trim() || existingAddress.city;
-    const stateFinal = state?.trim() || existingAddress.state;
-    const zipFinal = zip_code?.trim() || existingAddress.zip_code;
+      const streetFinal = (street?.trim() || existingAddress.street || "").trim();
+    const cityFinal = (city?.trim() || existingAddress.city || "").trim();
+    const stateFinal = (state?.trim() || existingAddress.state || "").trim();
+    const zipFinal = (zip_code?.trim() || existingAddress.zip_code || "").trim();
     const numberHouseFinal = number_house ?? existingAddress.number_house;
-    const countryFinal = country?.trim() || existingAddress.country;
+    const countryFinal = (country?.trim() || existingAddress.country || "").trim();
 
     if (streetFinal.length > 255) return NextResponse.json({ message: "Calle demasiado larga" }, { status: 400 });
     if (cityFinal.length > 100) return NextResponse.json({ message: "Ciudad demasiado larga" }, { status: 400 });
@@ -91,8 +91,8 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     const duplicateCheck = await pool.query(
       `SELECT address_id FROM addresses 
-       WHERE user_id = $1 AND number_house = $2`,
-      [userId, numberHouseFinal]
+       WHERE user_id = $1 AND number_house = $2 AND address_id != $3`,
+      [userId, numberHouseFinal, addrId]
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -114,6 +114,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     return NextResponse.json(result.rows[0], { status: 200 })
   } catch (error) {
+    console.log("ERRORRR ACA:" , error)
     return NextResponse.json({ message: "Error al actualizar la dirección", error }, { status: 500 })
   }
 }

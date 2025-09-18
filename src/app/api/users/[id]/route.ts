@@ -39,7 +39,7 @@ export async function GET(req: Request, { params }: RouteParams) {
         }
 
         const selectColumns = `
-            u.user_id, u.name, u.avatar, u.username, u.bio,
+            u.user_id, u.name, u.avatar, u.username,
             u.email, u.phone, u.created_at, u.updated_at
              `
 
@@ -114,7 +114,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
         const existingRes = await pool.query('SELECT avatar FROM users WHERE user_id = $1', [userId])
         const existingUser = existingRes.rows[0]
 
-        const { name, avatar, bio, username, phone } = (await req.json()) as Partial<User>
+        const { name, avatar, username, phone } = (await req.json()) as Partial<User>
 
         const avatarFinal = avatar?.trim() ? avatar : existingUser?.avatar || "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg"
 
@@ -146,23 +146,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
             }
         }
 
-        if (bio !== undefined) {
-            if (bio.trim() === "") {
-                return NextResponse.json(
-                    { message: "La biografía no puede estar vacía si se incluye" },
-                    { status: 400 }
-                )
-            }
-            if (bio.length > 400) {
-                return NextResponse.json(
-                    { message: "La biografía no puede superar los 400 caracteres" },
-                    { status: 400 }
-                )
-            }
-        }
 
 
-        const fields = { name, avatar: avatarFinal, bio, username, phone, updated_at: new Date() }
+        const fields = { name, avatar: avatarFinal, username, phone, updated_at: new Date() }
 
         const entries = Object.entries(fields).filter(
             (([_, value]) => value !== undefined && value !== null)
@@ -196,7 +182,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
         const values = entries.map(([_, value]) => value)
 
-        const sql = `UPDATE users SET ${setClause} WHERE user_id = $${entries.length + 1} RETURNING user_id, name, username, avatar, bio, phone, updated_at`
+        const sql = `UPDATE users SET ${setClause} WHERE user_id = $${entries.length + 1} RETURNING user_id, name, username, avatar, phone, updated_at`
 
         const result = await pool.query(sql, [...values, userId])
 

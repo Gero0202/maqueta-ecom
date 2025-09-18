@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import { ErrorProvider } from "./context/ErrorContext";
 import { Toaster } from "react-hot-toast";
+import Navbar from "./components/Navbar";
 
 const noto_sans = Noto_Sans({ 
   subsets: ['latin'],
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <ErrorProvider>
+            <Navbar/>
             {children}
             <Toaster position="top-center" reverseOrder={false}/>
           </ErrorProvider>

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from "@/app/styles/verifyEmail.module.css"
-import MainLayout from '../components/MainLayout';
 import toast from 'react-hot-toast';
 import { useError } from '../context/ErrorContext';
 import Swal from 'sweetalert2';
@@ -53,7 +52,6 @@ export default function VerifyEmailPage() {
     };
 
     return (
-        <MainLayout>
             <div className={styles["verify-container"]}>
                 <form onSubmit={handleSubmit} className={styles["verify-form"]}>
                     <h1>Verifica tu cuenta</h1>
@@ -91,6 +89,5 @@ export default function VerifyEmailPage() {
                 </form>
             </div>
 
-        </MainLayout>
     );
 }

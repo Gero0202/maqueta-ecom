@@ -8,6 +8,7 @@ import { useError } from "../context/ErrorContext";
 import styles from "@/app/styles/profileUser.module.css";
 import toast from "react-hot-toast";
 import { User } from "../types/User";
+import ManageAddresses from "../components/ManageAddresses";
 
 export default function Online() {
     const { showError } = useError();
@@ -18,7 +19,6 @@ export default function Online() {
     const [showEdit, setShowEdit] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // Fetch completo del usuario con addresses
     useEffect(() => {
         const fetchUserData = async () => {
             if (!currentUser) return;
@@ -26,7 +26,7 @@ export default function Online() {
                 const res = await fetch(`/api/users/${currentUser.user_id}`);
                 if (!res.ok) throw new Error("Error al obtener usuario");
                 const data = await res.json();
-                setUserData(data.user); // data.user debe incluir addresses
+                setUserData(data.user); 
             } catch (err) {
                 showError("No se pudo cargar el perfil");
             } finally {
@@ -37,7 +37,6 @@ export default function Online() {
         fetchUserData();
     }, [currentUser, showError]);
 
-    // Redirigir si no está autenticado
     useEffect(() => {
         if (!authLoading && !currentUser) router.push("/login");
     }, [authLoading, currentUser, router]);
@@ -82,14 +81,9 @@ export default function Online() {
                         <p><strong>Nombre:</strong> {userData.name}</p>
                         <p><strong>Email:</strong> {userData.email}</p>
                         <p><strong>Username:</strong> {userData.username}</p>
-                        <p><strong>Bio:</strong> {userData.bio}</p>
                         <p><strong>Teléfono:</strong> {userData.phone || "-"}</p>
 
-                        {userData.addresses?.map(addr => (
-                            <div key={addr.address_id}>
-                                <p><strong>Dirección:</strong> {addr.street}, {addr.city}, {addr.country}</p>
-                            </div>
-                        ))}
+                        <ManageAddresses/>
 
                         <button onClick={() => setShowEdit(true)} className={styles["edit-button"]}>
                             Editar perfil
@@ -102,9 +96,8 @@ export default function Online() {
                 <EditProfileModal
                     name={userData.name || ""}
                     username={userData.username || ""}
-                    bio={userData.bio || ""}
+                    phone={userData.phone || ""}
                     avatar={userData.avatar || ""}
-                    addresses={userData.addresses || []}
                     onClose={() => setShowEdit(false)}
                     onSave={handleSave}
                 />

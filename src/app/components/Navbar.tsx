@@ -28,10 +28,10 @@ export default function Navbar() {
         {!currentUser ? (
           <>
             <li>
-              <Link href="">Login</Link>
+              <Link href="/login">Login</Link>
             </li>
             <li>
-              <Link href="">Register</Link>
+              <Link href="/register">Register</Link>
             </li>
           </>
         ) : (
@@ -40,7 +40,7 @@ export default function Navbar() {
               <button onClick={logout}>Cerrar sesión</button>
             </li>
             <li>
-              <Link href="">👤 Perfil</Link>
+              <Link href="/online">👤 Perfil</Link>
             </li>
           </>
         )}
