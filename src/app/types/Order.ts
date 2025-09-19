@@ -2,7 +2,7 @@
 export interface Order {
   order_id: number;
   user_id: number;
-  products: OrderItem[];
+  item: OrderItem[];
   total: number;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
