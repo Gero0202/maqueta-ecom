@@ -14,4 +14,6 @@ export interface OrderItem {
   quantity: number;
   price: number;
   stock?: number;
+  image_url?: string
+  name?: string
 }

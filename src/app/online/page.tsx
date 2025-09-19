@@ -9,6 +9,7 @@ import styles from "@/app/styles/profileUser.module.css";
 import toast from "react-hot-toast";
 import { User } from "../types/User";
 import ManageAddresses from "../components/ManageAddresses";
+import Link from "next/link";
 
 export default function Online() {
     const { showError } = useError();
@@ -73,6 +74,10 @@ export default function Online() {
         <>
             <div className={styles["profile-container"]}>
                 <h1 className={styles["profile-title"]}>Tu Perfil</h1>
+
+                <Link href="/orders">
+                   <button>Historial de Ordenes</button>
+                </Link>
 
                 <div className={styles["profile-card"]}>
                     <img src={userData.avatar || ""} alt="Avatar" className={styles["profile-avatar"]} />
