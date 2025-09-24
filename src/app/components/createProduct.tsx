@@ -47,17 +47,18 @@ const CreateProductModal: React.FC<CreateProductProps> = ({ onClose, onSave }) =
             <div className={styles['modal-content']}>
                 <h2>Crear un producto</h2>
                 <form onSubmit={handleSubmit}>
+                    
                     <input name="name" onChange={handleChange} value={formData.name} type="text" placeholder="Nombre del producto" required />
+                    <p>Precio</p>
                     <input name="price" onChange={handleChange} value={formData.price} type="number" min={0} step={0.01} placeholder="Precio" required />
+                    <p>Stock</p>
                     <input name="stock" onChange={handleChange} value={formData.stock} type="number" min={0} placeholder="Stock" required />
                     <select name="category" onChange={handleChange} value={formData.category} required className={styles['select-genre']}>
                         <option value="">Seleccioná una categoría</option>
-                        <option value="electronics">Electrónica</option>
-                        <option value="clothing">Ropa</option>
-                        <option value="home">Hogar</option>
-                        <option value="toys">Juguetes</option>
-                        <option value="books">Libros</option>
-                        <option value="beauty">Belleza</option>
+                        <option value="accesorios">Accesorios</option>
+                        <option value="ropa">Ropa</option>
+                        <option value="libros">Libros</option>
+                        <option value="musica">Música</option>
                     </select>
                     <input name="image_url" onChange={handleChange} value={formData.image_url} type="text" placeholder="URL de la imagen" />
                     <textarea name="description" onChange={handleChange} value={formData.description} placeholder="Descripción" />

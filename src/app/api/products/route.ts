@@ -79,6 +79,8 @@ export async function POST(req: Request) {
             );
         }
 
+
+        //ACA CAMBIAR LAS CATEOGRIAS
         const allowedCategories = ["accesorios", "ropa", "libros", "musica"];
         if (!allowedCategories.includes(category)) {
             return NextResponse.json(

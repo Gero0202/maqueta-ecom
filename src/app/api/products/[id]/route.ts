@@ -117,17 +117,22 @@ export async function PUT(req: Request, { params }: RouteParams) {
                 { status: 400 }
             );
 
-        if (price !== undefined && (typeof price !== "number" || price < 0))
+        const numericPrice = Number(price);
+        const numericStock = Number(stock);
+
+        if (isNaN(numericPrice) || numericPrice < 0) {
             return NextResponse.json(
                 { message: "El precio debe ser un número mayor o igual a 0" },
                 { status: 400 }
             );
+        }
 
-        if (stock !== undefined && (typeof stock !== "number" || stock < 0))
+        if (isNaN(numericStock) || numericStock < 0) {
             return NextResponse.json(
                 { message: "El stock debe ser un número mayor o igual a 0" },
                 { status: 400 }
             );
+        }
 
         if (image_url && !image_url.startsWith("http"))
             return NextResponse.json(

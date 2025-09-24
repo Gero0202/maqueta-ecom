@@ -36,7 +36,7 @@ export default function OrdersPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Mis Órdenes</h1>
+      <h1 className={styles.titleOne}>Mis Órdenes</h1>
       {orders.length === 0 && <p>No tenés órdenes todavía.</p>}
 
       {orders.map((order) => (
