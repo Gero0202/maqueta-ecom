@@ -9,10 +9,12 @@
   margin-bottom: 1rem;
 }
 
+/* Ahora 8 columnas: ID, Username, Nombre, Email, Rol, Creado, Direcciones, Acciones */
 .table {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: 80px 1fr 1fr 1.6fr 120px 120px 2fr 120px;
   gap: 0.5rem;
+  align-items: start;
 }
 
 .table-header, .table-row {
@@ -23,6 +25,7 @@
   font-weight: bold;
   padding: 0.5rem;
   border-bottom: 2px solid #ccc;
+  background: #fafafa;
 }
 
 .table-row span {
@@ -30,31 +33,72 @@
   border-bottom: 1px solid #eee;
 }
 
+/* estilos específicos de direcciones */
+.address-list {
+  margin: 0;
+  padding-left: 1rem;
+  list-style: disc;
+  font-size: 0.9rem;
+}
+
+.address-list-li {
+  margin-bottom: 0.25rem;
+}
+
+.addr-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.addr-street { font-weight: 600; }
+.addr-city, .addr-state, .addr-zip, .addr-country { color: #555; font-size: 0.9rem; }
+.addr-default { color: #2b6cb0; margin-left: 0.25rem; }
+
+.no-address { font-style: italic; color: #666; }
+
+/* botones */
+.btn-edit {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* estados */
 .loading, .error {
   text-align: center;
   font-size: 1.2rem;
   margin-top: 2rem;
 }
 
-/* Responsive */
+/* Responsive: en pantalla chica hacemos layout tipo cards */
 @media (max-width: 768px) {
   .table {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* dos columnas para el card layout */
   }
+
   .table-header {
     display: none;
   }
+
   .table-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
     border: 1px solid #eee;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
   }
+
+  /* Mostrar el label antes del contenido usando el data-label */
   .table-row span::before {
-    content: attr(data-label);
-    font-weight: bold;
-    margin-right: 0.5rem;
+    content: attr(data-label) ": ";
+    font-weight: 700;
   }
+
+  .address-list { font-size: 0.85rem; padding-left: 1rem; }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import styles from "@/app/styles/adminUsers.module.css"
+import EditUserModal from "@/app/components/adminUsersEdit"
 
 type Address = {
   address_id: number
@@ -22,13 +23,14 @@ type User = {
   phone?: string
   role: string
   created_at: string
-  addresses: Address[]
+  addresses?: Address[]
 }
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -36,9 +38,14 @@ export default function UsersPage() {
         const res = await fetch("/api/users")
         if (!res.ok) throw new Error("Error al obtener usuarios")
         const data = await res.json()
-        setUsers(data)
+        // Aseguramos addresses como array para cada usuario
+        const normalized: User[] = data.map((u: any) => ({
+          ...u,
+          addresses: Array.isArray(u.addresses) ? u.addresses : []
+        }))
+        setUsers(normalized)
       } catch (err: any) {
-        setError(err.message)
+        setError(err.message || "Error desconocido")
       } finally {
         setLoading(false)
       }
@@ -46,12 +53,36 @@ export default function UsersPage() {
     fetchUsers()
   }, [])
 
+  const handleSave = async (updatedUser: Partial<User>) => {
+    if (!selectedUser) return
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.user_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        alert(body?.message || "Error al guardar usuario")
+        return
+      }
+      const saved = await res.json()
+      setUsers(prev => prev.map(u =>
+        u.user_id === selectedUser.user_id ? saved : u
+      ))
+    } catch (err) {
+      console.error(err)
+      alert("Error de conexión")
+    }
+  }
+
   if (loading) return <p className={styles["loading"]}>Cargando usuarios...</p>
   if (error) return <p className={styles["error"]}>{error}</p>
 
   return (
     <div className={styles["container"]}>
       <h1 className={styles["title"]}>Usuarios</h1>
+
       <div className={styles["table"]}>
         <div className={styles["table-header"]}>
           <span>ID</span>
@@ -60,18 +91,54 @@ export default function UsersPage() {
           <span>Email</span>
           <span>Rol</span>
           <span>Creado</span>
+          <span>Direcciones</span>
+          <span>Acciones</span>
         </div>
+
         {users.map(user => (
           <div key={user.user_id} className={styles["table-row"]}>
-            <span>{user.user_id}</span>
-            <span>{user.username}</span>
-            <span>{user.name}</span>
-            <span>{user.email}</span>
-            <span>{user.role}</span>
-            <span>{new Date(user.created_at).toLocaleDateString()}</span>
+            <span data-label="ID">{user.user_id}</span>
+            <span data-label="Username">{user.username}</span>
+            <span data-label="Nombre">{user.name}</span>
+            <span data-label="Email">{user.email}</span>
+            <span data-label="Rol">{user.role}</span>
+            <span data-label="Creado">{new Date(user.created_at).toLocaleDateString()}</span>
+
+            <span data-label="Direcciones">
+              {user.addresses && user.addresses.length > 0 ? (
+                <ul className={styles["address-list"]}>
+                  {user.addresses.map(add => (
+                    <li className={styles["address-list-li"]} key={add.address_id}>
+                      <div className={styles["addr-line"]}>
+                        <span className={styles["addr-street"]}>{add.street}</span>
+                        <span className={styles["addr-city"]}>{add.city}</span>
+                        <span className={styles["addr-state"]}>{add.state}</span>
+                        <span className={styles["addr-zip"]}>{add.zip_code}</span>
+                        <span className={styles["addr-country"]}>{add.country}</span>
+                        {add.is_default && <strong className={styles["addr-default"]}> [Default]</strong>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles["no-address"]}>Sin direcciones</p>
+              )}
+            </span>
+
+            <span data-label="Acciones">
+              <button className={styles["btn-edit"]} onClick={() => setSelectedUser(user)}>Editar</button>
+            </span>
           </div>
         ))}
       </div>
+
+      {selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   )
 }
