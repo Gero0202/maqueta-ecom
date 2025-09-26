@@ -68,6 +68,26 @@
   cursor: pointer;
 }
 
+.btn-delete{
+  background: #ce3131;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-create {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+
 /* estados */
 .loading, .error {
   text-align: center;

@@ -217,6 +217,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
         }
 
         const authUser = await getAuthUser()
+        console.log("AuthUser en DELETE:", authUser)
         if (!authUser) {
             return NextResponse.json(
                 { message: "No estas autenticado" },
@@ -232,6 +233,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
         }
 
         // Borramos primero addresses (si no hay ON DELETE CASCADE en la FK)
+        await pool.query(`DELETE FROM carts WHERE user_id = $1`, [userId])
         await pool.query(`DELETE FROM addresses WHERE user_id = $1`, [userId])
 
         const result = await pool.query(`DELETE FROM users WHERE user_id = $1`, [userId])
@@ -248,8 +250,9 @@ export async function DELETE(req: Request, { params }: RouteParams) {
         )
 
     } catch (error) {
+         console.error("Error en DELETE /users/:id", error) // 👈 muestra detalle SQL
         return NextResponse.json(
-            { message: "No se pudo eliminar al usuario", error: error },
+            { message: "No se pudo eliminar al usuario" },
             { status: 500 }
         )
     }

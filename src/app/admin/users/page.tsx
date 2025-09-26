@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import styles from "@/app/styles/adminUsers.module.css"
 import EditUserModal from "@/app/components/adminUsersEdit"
+import CreateUserModal from "@/app/components/CreateUserModal"
 
 type Address = {
   address_id: number
@@ -31,6 +32,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -76,12 +79,59 @@ export default function UsersPage() {
     }
   }
 
+  const handleCreate = async (newUser: User) =>{
+     const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newUser)
+     })
+
+     if (!res.ok) {
+       alert("error al crear un usuario")
+     }
+
+     const data = await res.json()
+
+     setUsers(prev => [data, ...prev])
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Seguro que quieres borrar el user?")) return
+
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        alert(body?.message || "Error al eliminar el usuario")
+        return
+      }
+
+      setUsers((prev) => prev.filter((u) => u.user_id !== id))
+    } catch (error) {
+      console.log("Error", error)
+      alert("Error de conexión al intentar eliminar usuario");
+    }
+
+  }
+
   if (loading) return <p className={styles["loading"]}>Cargando usuarios...</p>
   if (error) return <p className={styles["error"]}>{error}</p>
 
   return (
     <div className={styles["container"]}>
       <h1 className={styles["title"]}>Usuarios</h1>
+
+      <button
+        className={styles["btn-create"]}
+        onClick={() => setShowCreateModal(true)}
+      >
+        Crear usuario
+      </button>
+
 
       <div className={styles["table"]}>
         <div className={styles["table-header"]}>
@@ -127,6 +177,7 @@ export default function UsersPage() {
 
             <span data-label="Acciones">
               <button className={styles["btn-edit"]} onClick={() => setSelectedUser(user)}>Editar</button>
+              <button className={styles["btn-delete"]} onClick={() => handleDelete(user.user_id)}>Eliminar</button>
             </span>
           </div>
         ))}
@@ -139,6 +190,14 @@ export default function UsersPage() {
           onSave={handleSave}
         />
       )}
+
+      {showCreateModal && (
+        <CreateUserModal
+          onClose={() => setShowCreateModal(false)}
+          onUserCreated={(newUser) => setUsers(prev => [...prev, newUser])}
+        />
+      )}
+
     </div>
   )
 }

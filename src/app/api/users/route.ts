@@ -146,7 +146,7 @@ export async function POST(req: Request) {
 
         const sql = `INSERT INTO users (${filteredColumns.join(", ")})
                      VALUES (${placeholders.join(", ")})
-                     RETURNING user_id, username, name, email, role, avatar, phone, is_verified`;
+                     RETURNING user_id, username, name, email, role, avatar, phone, is_verified, created_at`;
 
         const result = await pool.query(sql, filteredValues);
 
