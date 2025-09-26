@@ -62,6 +62,12 @@ export default function AdminDashboard() {
                         USERS
                     </button>
                 </Link>
+
+                <Link href="/admin/orders">
+                    <button>
+                        ORDERS
+                    </button>
+                </Link>
             </div>
         </>
     );

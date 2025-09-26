@@ -1,0 +1,120 @@
+/* Contenedor general */
+.container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  font-family: Arial, sans-serif;
+}
+
+/* Título de la página */
+.title {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Tabla */
+.table {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  border-collapse: collapse;
+}
+
+.table-header {
+  display: contents;
+}
+
+.table-header span {
+  font-weight: bold;
+  padding: 10px;
+  background-color: #eee;
+  border-bottom: 2px solid #ccc;
+  text-align: center;
+}
+
+.table-row {
+  display: contents;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-row span {
+  padding: 8px;
+  text-align: center;
+}
+
+/* Dropdown de estado */
+.status-select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 120px;
+  cursor: pointer;
+}
+
+.table-row span[data-label="Estado"] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Lista de items de la orden */
+.item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.item-img {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.item-name {
+  font-weight: 500;
+}
+
+.item-qty,
+.item-price {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* Texto cuando no hay items */
+.no-items {
+  font-style: italic;
+  color: #777;
+  margin: 0;
+}
+
+.btn-delete {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-left: 8px;
+    transition: background-color 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #c0392b;
+}
+
+.btn-delete:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+

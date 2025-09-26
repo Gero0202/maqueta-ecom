@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: Params) {
 
     try {
         const user = await getAuthUser();
-        
+
         if (!user || user.role !== "admin") {
             return NextResponse.json({ message: "No autorizado" }, { status: 403 });
         }
@@ -52,18 +52,18 @@ export async function GET(req: Request, { params }: Params) {
         const order: Order & { user_name: string; user_email: string } = {
             order_id: firstRow.order_id,
             user_id: firstRow.user_id,
-            total: Number(firstRow.total),
+            total_amount: Number(firstRow.total),
             status: firstRow.status,
             created_at: firstRow.created_at,
             updated_at: firstRow.updated_at,
             user_name: firstRow.user_name,
             user_email: firstRow.user_email,
-            item: [],
+            items: [],
         };
 
         for (const row of res.rows) {
             if (row.product_id) {
-                order.item.push({
+                order.items.push({
                     product_id: row.product_id,
                     quantity: Number(row.quantity),
                     price: Number(row.price),
@@ -80,6 +80,7 @@ export async function GET(req: Request, { params }: Params) {
     }
 }
 
+
 export async function PATCH(req: Request, { params }: Params) {
     const client = await pool.connect();
 
@@ -91,7 +92,6 @@ export async function PATCH(req: Request, { params }: Params) {
 
         const { id } = await params;
         const body = await req.json();
-
         const { status: newStatus } = body as { status: OrderStatus };
 
         if (!newStatus) {
@@ -101,54 +101,77 @@ export async function PATCH(req: Request, { params }: Params) {
             );
         }
 
-        const orderResult = await client.query<{ status: OrderStatus }>(
-            `SELECT status FROM orders WHERE order_id = $1`,
-            [id]
-        );
+        const validStatuses: OrderStatus[] = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
 
-        if (orderResult.rows.length === 0) {
+        if (!validStatuses.includes(newStatus)) {
             return NextResponse.json(
-                { message: "Orden no encontrada" },
-                { status: 404 }
-            );
-        }
-
-        const currentStatus = orderResult.rows[0].status;
-
-        const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-            pending: ["paid", "cancelled"],
-            paid: ["shipped", "cancelled"],
-            shipped: ["delivered"],
-            delivered: [],
-            cancelled: [],
-        };
-
-        if (!validTransitions[currentStatus].includes(newStatus)) {
-            return NextResponse.json(
-                {
-                    message: `Transición de estado inválida de '${currentStatus}' a '${newStatus}'`,
-                },
+                { message: `Estado inválido. Debe ser uno de: ${validStatuses.join(", ")}` },
                 { status: 400 }
             );
         }
 
+        // Actualizamos el status sin restricciones
         const result = await client.query(
-            `UPDATE orders
-       SET status = $1, updated_at = NOW()
-       WHERE order_id = $2
-       RETURNING *`,
+            `
+            UPDATE orders
+            SET status = $1, updated_at = NOW()
+            WHERE order_id = $2
+            RETURNING *
+            `,
             [newStatus, id]
         );
 
+        if (result.rows.length === 0) {
+            return NextResponse.json({ message: "Orden no encontrada" }, { status: 404 });
+        }
+
         const updatedOrder = result.rows[0];
 
-        return NextResponse.json({ order: updatedOrder }, { status: 200 });
+        // Traemos user_name, user_email y items igual que en GET
+        const detailsRes = await client.query(
+            `
+            SELECT
+                o.*,
+                u.name AS user_name,
+                u.email AS user_email,
+                oi.product_id,
+                oi.quantity,
+                oi.price,
+                p.name AS product_name,
+                p.image_url
+            FROM orders o
+            JOIN users u ON u.user_id = o.user_id
+            LEFT JOIN order_items oi ON o.order_id = oi.order_id
+            LEFT JOIN products p ON p.product_id = oi.product_id
+            WHERE o.order_id = $1
+            `,
+            [id]
+        );
+
+        const orderWithItems = {
+            order_id: updatedOrder.order_id,
+            user_id: updatedOrder.user_id,
+            total_amount: Number(updatedOrder.total),
+            status: updatedOrder.status,
+            created_at: updatedOrder.created_at,
+            updated_at: updatedOrder.updated_at,
+            user_name: detailsRes.rows[0].user_name,
+            user_email: detailsRes.rows[0].user_email,
+            items: detailsRes.rows
+                .filter((r) => r.product_id)
+                .map((r) => ({
+                    product_id: r.product_id,
+                    quantity: Number(r.quantity),
+                    price: Number(r.price),
+                    name: r.product_name,
+                    image_url: r.image_url,
+                })),
+        };
+
+        return NextResponse.json({ order: orderWithItems }, { status: 200 });
     } catch (error) {
         console.error(error);
-        return NextResponse.json(
-            { message: "Error al actualizar orden" },
-            { status: 500 }
-        );
+        return NextResponse.json({ message: "Error al actualizar orden" }, { status: 500 });
     } finally {
         client.release();
     }
@@ -180,12 +203,12 @@ export async function DELETE(req: Request, { params }: Params) {
         const currentStatus = orderResult.rows[0].status;
 
         // 2. Solo se puede borrar si está "pending"
-        if (currentStatus !== "pending") {
-            return NextResponse.json(
-                { message: `No se puede eliminar una orden con estado '${currentStatus}'` },
-                { status: 400 }
-            );
-        }
+        // if (currentStatus !== "pending") {
+        //     return NextResponse.json(
+        //         { message: `No se puede eliminar una orden con estado '${currentStatus}'` },
+        //         { status: 400 }
+        //     );
+        // }
 
         // 3. Eliminar la orden y sus ítems asociados
         await client.query("BEGIN");

@@ -2,11 +2,13 @@
 export interface Order {
   order_id: number;
   user_id: number;
-  item: OrderItem[];
-  total: number;
+  items: OrderItem[];
+  total_amount: number;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
   updated_at: string;
+  user_name?: string;
+  user_email?: string;
 }
 
 export interface OrderItem {
@@ -17,3 +19,5 @@ export interface OrderItem {
   image_url?: string
   name?: string
 }
+
+export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
