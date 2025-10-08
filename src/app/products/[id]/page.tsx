@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Product } from "@/app/types/Product"
 
 type Params = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 async function getProductById(id: string): Promise<Product | null> {
@@ -17,7 +17,7 @@ async function getProductById(id: string): Promise<Product | null> {
 }
 
 export default async function ProductPage({ params }: Params) {
-  const { id } = params
+  const { id } = await params
   const product = await getProductById(id)
 
   if (!product) {
