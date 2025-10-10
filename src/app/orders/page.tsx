@@ -44,7 +44,7 @@ export default function OrdersPage() {
           <div className={styles.orderHeader}>
             <span>ID: {order.order_id}</span>
             <span>Status: {order.status}</span>
-            <span>Total: ${Number(order.total).toFixed(2)}</span>
+            <span>Total: ${Number(order.total_amount).toFixed(2)}</span>
             <span>Fecha: {new Date(order.created_at).toLocaleDateString()}</span>
           </div>
 

@@ -9,31 +9,56 @@ export async function POST(req: Request) {
         const user = await getAuthUser()
         if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
 
-        // Traer items del carrito (adaptá a tu esquema)
+        // 1️⃣ Traemos el carrito activo
         const cartRes = await client.query(
-            `SELECT p.product_id, p.name as title, p.price, ci.quantity
-       FROM cart_items ci
-       JOIN carts c ON ci.cart_id = c.cart_id
-       JOIN products p ON p.product_id = ci.product_id
-       WHERE c.user_id = $1 AND c.status = 'active'`,
+            `SELECT cart_id FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`,
             [user.user_id]
         );
 
-        const products = cartRes.rows;
-        if (!products.length) return NextResponse.json({ message: "Carrito vacío" }, { status: 400 });
+        if (cartRes.rows.length === 0) {
+            return NextResponse.json({ message: "Carrito vacío" }, { status: 404 });
+        }
 
-        const items = products.map((p: any) => ({
+        const cartId = cartRes.rows[0].cart_id
+
+
+        // 2️⃣ Traemos los ítems
+        const itemsRes = await client.query(
+            `SELECT ci.product_id, ci.quantity, ci.unit_price, p.name, p.image_url
+            FROM cart_items ci
+            JOIN products p ON ci.product_id = p.product_id
+            WHERE ci.cart_id = $1`,
+            [cartId]
+        );
+
+        if (itemsRes.rows.length === 0) {
+            return NextResponse.json({ message: "Carrito vacío" }, { status: 404 });
+        }
+
+        const items = itemsRes.rows.map((p) => ({
             id: p.product_id,
-            title: p.title,
+            title: p.name,
             quantity: Number(p.quantity),
-            unit_price: Number(p.price),
+            unit_price: Number(p.unit_price),
             currency_id: "ARS",
         }));
+
+        // TOTAL SOLO PARA PROBAR SI HACE BIEN EL CALCULO EN MERCADOPAGO
+        const total = items.reduce(
+            (sum, item) => sum + item.unit_price * item.quantity,
+            0
+        );
+
+        console.log("TOTAL LOGEADO DE COIGO: ", total);
+
 
         const preferenceData = {
             items,
             payer: { email: user.email },
-            metadata: { user_id: user.user_id },
+            metadata: { 
+                user_id: user.user_id,
+                cartId: cartId
+            },
             back_urls: {
                 success: `${process.env.FRONT_URL}/mercadopago/success`,
                 failure: `${process.env.FRONT_URL}/mercadopago/failure`,
@@ -51,7 +76,7 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Error creating MP preference:", error);
         return NextResponse.json({ message: "Error interno" }, { status: 500 });
-    }finally{
+    } finally {
         client.release()
     }
 }

@@ -32,7 +32,7 @@ interface ValidationResult {
  * @param body Cuerpo ya parseado del request (si lo necesitas)
  */
 
-export const validateSignature = async (req: NextRequest, body?: any): Promise<ValidationResult> => {
+export const validateSignature = async (req: Request, body?: any): Promise<ValidationResult> => {
     const signatureHeader = req.headers.get("x-signature")
     const requestId = req.headers.get("x-request-id")
 
