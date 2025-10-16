@@ -1,0 +1,66 @@
+.success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background-color: #f7fdf9;
+  padding: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.title {
+  color: #22c55e;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.info {
+  font-size: 1rem;
+  color: #333;
+  margin: 0.5rem 0;
+}
+
+.loading {
+  text-align: center;
+  color: #555;
+  font-size: 1.1rem;
+  padding: 4rem 1rem;
+}
+
+.error-container {
+  text-align: center;
+  padding: 3rem;
+}
+
+.error-title {
+  color: #dc2626;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-message {
+  color: #555;
+  font-size: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

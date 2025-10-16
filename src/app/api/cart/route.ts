@@ -39,7 +39,7 @@ export async function GET() {
 
         const total = items.reduce((s, it) => s + Number(it.unit_price) * Number(it.quantity), 0);
 
-        return NextResponse.json({ cart: { ...cart, items, total: total.toFixed(2) } }, { status: 200 });
+        return NextResponse.json({ cart: { ...cart, items, total: total.toFixed(2), user_email: user.email } }, { status: 200 });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ message: "Error interno" }, { status: 500 });

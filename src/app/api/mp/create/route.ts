@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
         // 2️⃣ Traemos los ítems
         const itemsRes = await client.query(
-            `SELECT ci.product_id, ci.quantity, ci.unit_price, p.name, p.image_url
+            `SELECT ci.product_id, ci.quantity, p.price AS unit_price, p.name, p.image_url
             FROM cart_items ci
             JOIN products p ON ci.product_id = p.product_id
             WHERE ci.cart_id = $1`,
@@ -60,9 +60,9 @@ export async function POST(req: Request) {
                 cartId: cartId
             },
             back_urls: {
-                success: `${process.env.FRONT_URL}/mercadopago/success`,
-                failure: `${process.env.FRONT_URL}/mercadopago/failure`,
-                pending: `${process.env.FRONT_URL}/mercadopago/pending`,
+                success: `${process.env.FRONT_URL}/mercadopago/checkout/success`,
+                failure: `${process.env.FRONT_URL}/mercadopago/checkout/failure`,
+                pending: `${process.env.FRONT_URL}/mercadopago/checkout/pending`,
             },
             notification_url: `${process.env.BACK_URL}/api/mp/webhook`,
             auto_return: "approved",
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         if (!result.id) {
             return NextResponse.json({ error: "No se pudo crear la preferencia" }, { status: 500 });
         }
-        return NextResponse.json(result.id, { status: 201 });
+        return NextResponse.json({id: result.id, init_point: result.init_point},{ status: 201 });
     } catch (error) {
         console.error("Error creating MP preference:", error);
         return NextResponse.json({ message: "Error interno" }, { status: 500 });

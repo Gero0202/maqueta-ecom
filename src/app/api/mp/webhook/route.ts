@@ -24,8 +24,15 @@ export async function POST(req: Request) {
         console.log("✅ Firma válida. Procesando webhook...");
 
         // 2️⃣ Obtenemos los datos del pago desde Mercado Pago
-        const paymentMp = await payment.get({ id: result.dataId! });
-        const paymentData = paymentMp;
+        let paymentData;
+        try {
+            const paymentMp = await payment.get({ id: result.dataId! });
+            paymentData = paymentMp;
+           
+        } catch (err) {
+            console.error("❌ Error al consultar el pago en Mercado Pago:", err);
+            return NextResponse.json({ message: "Error al obtener el pago de Mercado Pago" }, { status: 502 });
+        }
 
         console.log("💬 Notificación recibida. Payment ID:", result.dataId);
         console.log("🧾 PAYMENT DATA:", paymentData);
@@ -94,6 +101,7 @@ export async function POST(req: Request) {
             console.log(`ℹ️ Carrito actualizado con estado ${internalStatus}`);
         }
 
+        console.log(`WEBHOOK CORRECTO, ${paymentData}`);
         return NextResponse.json(
             { message: "Webhook procesado correctamente" },
             { status: 200 }
