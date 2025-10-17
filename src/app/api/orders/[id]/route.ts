@@ -4,13 +4,12 @@ import { getAuthUser } from "@/app/lib/auth";
 import { OrderItem } from "@/app/types/Order";
 
 interface Params {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
   const client = await pool.connect();
+
   try {
     const user = await getAuthUser();
     if (!user) {
@@ -18,9 +17,16 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     const { id } = await params;
+
+    if (!/^\d+$/.test(id)) {
+      return NextResponse.json({ message: "ID de orden inválido" }, { status: 400 });
+    }
+
+    const orderId = parseInt(id, 10);
+
     const orderRes = await client.query(
       `SELECT * FROM orders WHERE order_id = $1 AND user_id = $2`,
-      [id, user.user_id]
+      [orderId, user.user_id]
     );
 
     if (orderRes.rows.length === 0) {
@@ -34,7 +40,7 @@ export async function GET(req: Request, { params }: Params) {
        FROM order_items oi
        JOIN products p ON p.product_id = oi.product_id
        WHERE order_id = $1`,
-      [id]
+      [orderId]
     );
 
     const items: OrderItem[] = itemsRes.rows.map((item) => ({
@@ -47,7 +53,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json({ order: { ...order, items } }, { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error("Error obteniendo la orden:", error);
     return NextResponse.json({ message: "Error obteniendo la orden" }, { status: 500 });
   } finally {
     client.release();

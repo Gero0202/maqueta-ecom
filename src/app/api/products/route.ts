@@ -34,7 +34,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json({ products: result.rows }, { status: 200 });
     } catch (error) {
-        console.error(error);
+        console.error("❌ Error al obtener productos:", error);
         return NextResponse.json(
             { message: "Error interno del servidor al obtener los productos." },
             { status: 500 }
@@ -55,19 +55,29 @@ export async function POST(req: Request) {
             );
         }
 
-        const { name, description, price, stock, category, image_url } =
-            (await req.json()) as NewProduct;
+        const body = (await req.json()) as Partial<NewProduct>;
+        const { name, description, price, stock, category, image_url } = body;
 
-        if (!name || !price || !stock || !category) {
+        if (!name || !price || stock === undefined || !category) {
             return NextResponse.json(
                 { message: "Los campos name, price, stock y category son obligatorios" },
                 { status: 400 }
             );
         }
 
-        if (typeof price !== "number" || price <= 0) {
+        const trimmedName = name.trim();
+        const trimmedCategory = category.trim().toLowerCase();
+
+        if (trimmedName.length < 2 || trimmedName.length > 100) {
             return NextResponse.json(
-                { message: "El precio debe ser un número mayor a 0" },
+                { message: "El nombre del producto debe tener entre 2 y 100 caracteres." },
+                { status: 400 }
+            );
+        }
+
+        if (typeof price !== "number" || isNaN(price) || price <= 0) {
+            return NextResponse.json(
+                { message: "El precio debe ser un número mayor a 0." },
                 { status: 400 }
             );
         }
@@ -82,7 +92,7 @@ export async function POST(req: Request) {
 
         //ACA CAMBIAR LAS CATEOGRIAS
         const allowedCategories = ["accesorios", "ropa", "libros", "musica"];
-        if (!allowedCategories.includes(category)) {
+        if (!allowedCategories.includes(trimmedCategory)) {
             return NextResponse.json(
                 { message: `Categoría no válida. Solo se permiten: ${allowedCategories.join(", ")}` },
                 { status: 400 }
@@ -90,7 +100,7 @@ export async function POST(req: Request) {
         }
 
         if (image_url) {
-            const validExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
+            const validExtensions = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))$/i;
             if (!validExtensions.test(image_url)) {
                 return NextResponse.json(
                     { message: "Formato de imagen no válido. Solo se permiten jpg, jpeg, png, gif, webp." },
@@ -99,13 +109,26 @@ export async function POST(req: Request) {
             }
         }
 
+        // ❌ Evitar duplicados por nombre
+        const duplicateCheck = await pool.query(
+            "SELECT 1 FROM products WHERE LOWER(name) = LOWER($1) LIMIT 1",
+            [trimmedName]
+        );
+
+        if ((duplicateCheck?.rowCount ?? 0) > 0) {
+            return NextResponse.json(
+                { message: "Ya existe un producto con ese nombre." },
+                { status: 409 }
+            );
+        }
+
         const productData = {
-            name,
-            description,
+            name: trimmedName,
+            description: description?.trim() || null,
             price,
             stock,
-            category,
-            image_url,
+            category: trimmedCategory,
+            image_url: image_url?.trim() || null,
         };
 
         const { text, values } = buildInsertQuery("products", productData, [
@@ -118,7 +141,10 @@ export async function POST(req: Request) {
 
         const result = await pool.query(text, values);
 
-        return NextResponse.json(result.rows[0], { status: 201 });
+        return NextResponse.json(
+            { message: "Producto creado correctamente.", product: result.rows[0] },
+            { status: 201 }
+        );
     } catch (error) {
         console.error(error);
         return NextResponse.json(

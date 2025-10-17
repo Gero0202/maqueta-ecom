@@ -32,44 +32,48 @@ export async function POST() {
       return NextResponse.json({ message: "El carrito está vacío" }, { status: 400 })
     }
 
+    // Validar stock
+    for (const item of items) {
+      if (item.stock! < item.quantity) {
+        return NextResponse.json(
+          { message: `Stock insuficiente para el producto ${item.product_id}` },
+          { status: 409 }
+        );
+      }
+    }
+
     // calcular total
     const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
     await client.query("BEGIN")
 
+    // Reducir stock
     for (const item of items) {
-      const stockRes = await client.query(
-        `UPDATE products 
-     SET stock = stock - $1 
-     WHERE product_id = $2 AND stock >= $1 
-     RETURNING stock`,
+      await client.query(
+        `UPDATE products SET stock = stock - $1 WHERE product_id = $2`,
         [item.quantity, item.product_id]
-      )
-
-      if (stockRes.rows.length === 0) {
-        await client.query("ROLLBACK")
-        return NextResponse.json(
-          { message: `Stock insuficiente para el producto ${item.product_id}` },
-          { status: 409 }
-        )
-      }
+      );
     }
+
+
 
     // crear orden
     const orderRes = await client.query(
-      `INSERT INTO orders (user_id, total, status) VALUES ($1, $2, $3) RETURNING *`,
-      [user.user_id, total, "pending"]
-    )
+      `INSERT INTO orders (user_id, total, status) VALUES ($1, $2, 'pending') RETURNING *`,
+      [user.user_id, total]
+    );
 
     const order = orderRes.rows[0] as Order
 
-    // insertar items
-    for (const item of items) {
-      await client.query(
+    // Insertar items en order_items
+    const insertPromises = items.map((item) =>
+      client.query(
         `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)`,
         [order.order_id, item.product_id, item.quantity, item.price]
       )
-    }
+    );
+
+    await Promise.all(insertPromises);
 
     // opcional: marcar carrito como "completed"
     await client.query(
