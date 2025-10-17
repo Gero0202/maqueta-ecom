@@ -4,21 +4,18 @@ import pool from "@/app/lib/db";
 import { hashpassword, comparePassword } from "@/app/lib/hash";
 
 interface Params {
-    params: Promise<{ 
-        id: string 
+    params: Promise<{
+        id: string
     }>
 }
 
 export async function PUT(req: Request, { params }: Params) {
     try {
         const { id } = await params
-        const userId = parseInt(id, 10)
-        if (isNaN(userId)) {
-            return NextResponse.json(
-                { message: "ID invalido" },
-                { status: 400 }
-            )
+        if (!/^\d+$/.test(id)) {
+            return NextResponse.json({ message: "ID inválido" }, { status: 400 });
         }
+        const userId = Number(id);
 
         const authUser = await getAuthUser()
         if (!authUser) {
@@ -28,7 +25,7 @@ export async function PUT(req: Request, { params }: Params) {
             )
         }
 
-        if (authUser.user_id !== userId ) {
+        if (authUser.user_id !== userId) {
             return NextResponse.json(
                 { message: "No autorizado" },
                 { status: 403 }
@@ -46,6 +43,10 @@ export async function PUT(req: Request, { params }: Params) {
             )
         }
 
+        if (currentPassword === newPassword) {
+            return NextResponse.json({ message: "La nueva contraseña no puede ser igual a la actual" }, { status: 400 });
+        }
+
         if (newPassword.length < 6) {
             return NextResponse.json(
                 { message: "Contraseña muy corta" },
@@ -54,7 +55,7 @@ export async function PUT(req: Request, { params }: Params) {
         }
 
         const result = await pool.query(
-            'SELECT password FROM users WHERE user_id = $1',[userId]
+            'SELECT password FROM users WHERE user_id = $1', [userId]
         )
 
         const user = result.rows[0]
@@ -73,10 +74,10 @@ export async function PUT(req: Request, { params }: Params) {
             )
         }
 
-        const hashedNewPassowrd = await hashpassword(newPassword)
+        const hashedNewPassword = await hashpassword(newPassword)
 
         await pool.query(
-            'UPDATE users SET password = $1 WHERE user_id = $2', [hashedNewPassowrd, userId]
+            'UPDATE users SET password = $1 WHERE user_id = $2', [hashedNewPassword, userId]
         )
 
         return NextResponse.json({ message: "Contraseña actualizada" })

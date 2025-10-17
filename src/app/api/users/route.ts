@@ -72,6 +72,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const auth = await requireRole(['admin'])
+        if (!auth) {
+            return NextResponse.json(
+                { message: "No tenés permisos para crear usuarios" },
+                { status: 403 }
+            );
+        }
+
         const { name, username, email, password, avatar, phone, role, is_verified } = (await req.json()) as UserData
 
         if (!name || !username || username.length > 50 || !email || !password) {
@@ -105,13 +112,29 @@ export async function POST(req: Request) {
             )
         }
 
-        const hashedPassowrd = await hashpassword(password)
+        const existingUserName = await pool.query(
+            'SELECT user_id FROM users WHERE username = $1',
+            [username]
+        )
+
+        if ((existingUserName.rowCount ?? 0) > 0) {
+            return NextResponse.json(
+                { message: "El username proporcionado ya está registrado" },
+                { status: 409 }
+            )
+        }
+
+        const hashedPassword = await hashpassword(password)
 
         const defaultAvatar = "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg"
         const finalAvatar = avatar || defaultAvatar
 
-        const finalRole = role || "customer"
-        const verified = true
+        const validRoles = ["customer", "admin", "seller"];
+        if (role && !validRoles.includes(role)) {
+            return NextResponse.json({ message: "Rol inválido" }, { status: 400 });
+        }
+
+        const verified = is_verified ?? true
 
         const ipAddress = "admin-created";
 
@@ -119,10 +142,10 @@ export async function POST(req: Request) {
             name,
             username,
             email,
-            password: hashedPassowrd,
+            password: hashedPassword,
             avatar: finalAvatar,
             phone: phone || null,
-            role: finalRole,
+            role: role || "customer",
             is_verified: verified,
             verify_code: null,
             ip_address: ipAddress,
@@ -130,19 +153,32 @@ export async function POST(req: Request) {
             updated_at: new Date(),
         };
 
-        const columns = Object.keys(userData);
-        const values = Object.values(userData);
-        const filteredColumns: string[] = [];
-        const filteredValues: any[] = [];
-        const placeholders: string[] = [];
+        // Lista blanca de columnas permitidas en la base de datos
+        const allowedFields = [
+            "name",
+            "username",
+            "email",
+            "password",
+            "avatar",
+            "phone",
+            "role",
+            "is_verified",
+            "ip_address",
+            "created_at",
+            "updated_at",
+        ];
 
-        for (let i = 0; i < values.length; i++) {
-            if (values[i] !== undefined && values[i] !== null) {
-                filteredColumns.push(columns[i]);
-                placeholders.push(`$${filteredValues.length + 1}`);
-                filteredValues.push(values[i]);
-            }
-        }
+        // Filtrar userData dejando solo las columnas permitidas
+        const entries = Object.entries(userData).filter(([key]) =>
+            allowedFields.includes(key)
+        );
+
+        const filteredColumns = entries.map(([key]) => key);
+        const filteredValues = entries.map(([_, value]) => value);
+        const placeholders = filteredColumns.map(
+            (_, index) => `$${index + 1}`
+        );
+
 
         const sql = `INSERT INTO users (${filteredColumns.join(", ")})
                      VALUES (${placeholders.join(", ")})
@@ -152,27 +188,11 @@ export async function POST(req: Request) {
 
         return NextResponse.json(result.rows[0], { status: 201 });
     } catch (error) {
-        const isDatabaseError = (e: any): e is { code: string; constraint: string } => {
-            return (
-                e instanceof Object &&
-                'code' in e &&
-                typeof e.code === 'string' &&
-                'constraint' in e &&
-                typeof e.constraint === 'string'
-            );
-        };
-
-        if (isDatabaseError(error) && error.code === '23505' && error.constraint.includes('email')) {
-            return NextResponse.json(
-                { message: 'El email proporcionado ya está registrado' },
-                { status: 400 }
-            );
-        }
-
+        console.error("Error en /api/users:", error);
         return NextResponse.json(
-            { message: "Error interno del servidor al intentar crear usuario: ", error: error },
+            { message: "Error interno del servidor" },
             { status: 500 }
-        )
+        );
     }
 }
 

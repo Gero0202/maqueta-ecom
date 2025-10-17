@@ -10,14 +10,17 @@ interface RouteParams {
 }
 
 export async function PUT(req: Request, { params }: RouteParams) {
+    const client = await pool.connect();
+
     try {
         const { id, addressId } = await params;
-        const userId = parseInt(id, 10);
-        const addrId = parseInt(addressId, 10);
 
-        if (isNaN(userId) || isNaN(addrId)) {
+        if (!/^\d+$/.test(id) || !/^\d+$/.test(addressId)) {
             return NextResponse.json({ message: "IDs inválidos" }, { status: 400 });
         }
+
+        const userId = parseInt(id, 10);
+        const addrId = parseInt(addressId, 10);
 
         const authUser = await getAuthUser();
         if (!authUser) {
@@ -28,28 +31,35 @@ export async function PUT(req: Request, { params }: RouteParams) {
             return NextResponse.json({ message: "No autorizado" }, { status: 403 });
         }
 
-        const addrRes = await pool.query(
-            "SELECT * FROM addresses WHERE address_id = $1 AND user_id = $2",
+        const addrRes = await client.query(
+            "SELECT address_id FROM addresses WHERE address_id = $1 AND user_id = $2",
             [addrId, userId]
         );
 
-        if (addrRes.rows.length === 0) {
+        if (addrRes.rowCount === 0) {
             return NextResponse.json({ message: "Dirección no encontrada" }, { status: 404 });
         }
 
-        await pool.query(
-            "UPDATE addresses SET is_default = false WHERE user_id = $1",
-            [userId]
-        );
+        await client.query("BEGIN");
 
-        const result = await pool.query(
-            "UPDATE addresses SET is_default = true WHERE address_id = $1 AND user_id = $2 RETURNING *",
+        await client.query("UPDATE addresses SET is_default = false WHERE user_id = $1", [userId]);
+
+        const result = await client.query(
+            "UPDATE addresses SET is_default = true, updated_at = NOW() WHERE address_id = $1 AND user_id = $2 RETURNING *",
             [addrId, userId]
         );
 
+        await client.query("COMMIT");
+
         return NextResponse.json(result.rows[0], { status: 200 });
     } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
         console.error("Error al establecer dirección por defecto:", error);
-        return NextResponse.json({ message: "Error interno del servidor", error }, { status: 500 });
+        return NextResponse.json(
+            { message: "Error al establecer dirección predeterminada" },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
     }
 }

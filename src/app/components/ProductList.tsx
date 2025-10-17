@@ -3,6 +3,7 @@
 import React from "react"
 import { Product } from "@/app/types/Product"
 import CardProduct from "@/app/components/cardProduct"
+import styles from "@/app/styles/cardProduct.module.css"
 
 type Props = {
   products: Product[]
@@ -15,7 +16,7 @@ export default function ProductList({ products, onAddToCart }: Props) {
   }
 
   return (
-    <section>
+    <section className={styles["sectionProducts"]}>
       {products.map((product) => (
         <CardProduct
           key={product.product_id}

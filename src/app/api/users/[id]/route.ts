@@ -14,13 +14,13 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
     try {
         const { id } = await params
-        const userId = parseInt(id, 10)
-        if (isNaN(userId)) {
+        if (!/^\d+$/.test(id)) {
             return NextResponse.json(
-                { message: "ID no válido, debe ser un número" },
+                { message: "ID inválido, debe ser un número entero" },
                 { status: 400 }
-            )
+            );
         }
+        const userId = parseInt(id, 10);
 
         const currentUser = await getAuthUser()
 
@@ -76,10 +76,11 @@ export async function GET(req: Request, { params }: RouteParams) {
 
         return NextResponse.json({ user: result.rows[0] }, { status: 200 });
     } catch (error) {
+        console.error("Error en /api/users/[id]:", error);
         return NextResponse.json(
-            { message: "No se pudo obtener el usuario", error },
+            { message: "Error interno del servidor" },
             { status: 500 }
-        )
+        );
     }
 }
 
@@ -87,14 +88,13 @@ export async function GET(req: Request, { params }: RouteParams) {
 export async function PUT(req: Request, { params }: RouteParams) {
     try {
         const { id } = await params
-
-        const userId = parseInt(id, 10)
-        if (isNaN(userId)) {
+        if (!/^\d+$/.test(id)) {
             return NextResponse.json(
-                { message: "ID no valido debe ser un numero" },
+                { message: "ID inválido, debe ser un número entero" },
                 { status: 400 }
-            )
+            );
         }
+        const userId = parseInt(id, 10);
 
         const authUser = await getAuthUser()
         if (!authUser) {
@@ -114,7 +114,37 @@ export async function PUT(req: Request, { params }: RouteParams) {
         const existingRes = await pool.query('SELECT avatar FROM users WHERE user_id = $1', [userId])
         const existingUser = existingRes.rows[0]
 
-        const { name, avatar, username, phone } = (await req.json()) as Partial<User>
+        const body = (await req.json()) as Record<string, any>;
+
+        // === 5. Lista blanca: campos permitidos para actualizar ===
+        const allowedKeys = ["name", "avatar", "username", "phone"];
+        for (const key of Object.keys(body)) {
+            if (!allowedKeys.includes(key)) {
+                return NextResponse.json(
+                    { message: `Campo no permitido: ${key}` },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // === 6. Validación de URL para avatar (antes de usar avatarFinal) ===
+        if (body.avatar !== undefined && body.avatar !== null && body.avatar !== "") {
+            const avatarCandidate = String(body.avatar).trim();
+            try {
+                const u = new URL(avatarCandidate);
+                if (!["http:", "https:"].includes(u.protocol)) {
+                    throw new Error("Protocolo inválido");
+                }
+            } catch {
+                return NextResponse.json(
+                    { message: "URL de avatar no válida" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // === Ahora destructuramos usando el body ya validado ===
+        const { name, avatar, username, phone } = body as Partial<User>;
 
         const avatarFinal = avatar?.trim() ? avatar : existingUser?.avatar || "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg"
 
@@ -163,7 +193,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
         if (username) {
             const check = await pool.query(
-                'SELECT user_id FROM users WHERE username = $1', [username]
+                'SELECT user_id FROM users WHERE LOWER(username) = LOWER($1)', [username]
             )
 
             const usernameExists = check.rows.length > 0 && check.rows[0].user_id !== userId
@@ -193,69 +223,97 @@ export async function PUT(req: Request, { params }: RouteParams) {
             )
         }
 
-        return NextResponse.json(result.rows[0], { status: 200 })
+        return NextResponse.json({ user: result.rows[0] }, { status: 200 })
 
     } catch (error) {
+        console.error("Error en /api/users/[id]:", error);
         return NextResponse.json(
-            { message: "Error interno al actualizar el usuario" },
+            { message: "Error interno del servidor" },
             { status: 500 }
-        )
+        );
     }
 }
 
 
 export async function DELETE(req: Request, { params }: RouteParams) {
-    try {
-        const { id } = await params
+    const client = await pool.connect();
 
-        const userId = parseInt(id, 10)
+    try {
+        const { id } = await params;
+        const userId = parseInt(id, 10);
+
         if (isNaN(userId)) {
             return NextResponse.json(
-                { message: "ID no valido debe ser un numero" },
+                { message: "ID no válido, debe ser un número" },
                 { status: 400 }
-            )
+            );
         }
 
-        const authUser = await getAuthUser()
-        console.log("AuthUser en DELETE:", authUser)
+        const authUser = await getAuthUser();
+        console.log("AuthUser en DELETE:", authUser);
+
         if (!authUser) {
             return NextResponse.json(
-                { message: "No estas autenticado" },
+                { message: "No estás autenticado" },
                 { status: 401 }
-            )
+            );
         }
 
-        if (authUser.user_id !== userId && authUser.role !== 'admin') {
+        // Evitar que el admin se borre a sí mismo
+        if (authUser.user_id === userId && authUser.role === "admin") {
+            return NextResponse.json(
+                { message: "No puedes eliminar tu propia cuenta de administrador" },
+                { status: 403 }
+            );
+        }
+
+        // Solo admin o el propio usuario pueden borrar
+        if (authUser.user_id !== userId && authUser.role !== "admin") {
             return NextResponse.json(
                 { message: "No tienes permiso para eliminar este usuario" },
                 { status: 403 }
-            )
+            );
         }
 
-        // Borramos primero addresses (si no hay ON DELETE CASCADE en la FK)
-        await pool.query(`DELETE FROM carts WHERE user_id = $1`, [userId])
-        await pool.query(`DELETE FROM addresses WHERE user_id = $1`, [userId])
+        // Verificar si existe el usuario
+        const existingUser = await client.query(
+            `SELECT user_id FROM users WHERE user_id = $1`,
+            [userId]
+        );
 
-        const result = await pool.query(`DELETE FROM users WHERE user_id = $1`, [userId])
-        if (result.rowCount === 0) {
+        if (existingUser.rowCount === 0) {
             return NextResponse.json(
-                { message: "No existe usuario con ese ID" },
-                { status: 400 }
-            )
+                { message: "No existe un usuario con ese ID" },
+                { status: 404 }
+            );
         }
+
+        // Iniciar transacción
+        await client.query("BEGIN");
+
+        // Eliminar registros relacionados (si no hay ON DELETE CASCADE)
+        await client.query(`DELETE FROM carts WHERE user_id = $1`, [userId]);
+        await client.query(`DELETE FROM addresses WHERE user_id = $1`, [userId]);
+
+        // Eliminar usuario
+        await client.query(`DELETE FROM users WHERE user_id = $1`, [userId]);
+
+        // Confirmar transacción
+        await client.query("COMMIT");
 
         return NextResponse.json(
             { message: "Usuario eliminado correctamente" },
             { status: 200 }
-        )
-
+        );
     } catch (error) {
-         console.error("Error en DELETE /users/:id", error) // 👈 muestra detalle SQL
+        await client.query("ROLLBACK");
+        console.error("Error en DELETE /users/:id", error);
         return NextResponse.json(
-            { message: "No se pudo eliminar al usuario" },
+            { message: "No se pudo eliminar el usuario", error },
             { status: 500 }
-        )
+        );
+    } finally {
+        client.release();
     }
-
 }
 

@@ -11,22 +11,17 @@ interface Params {
 export async function PUT(req: Request, { params }: Params) {
     try {
         const { id } = await params
-        const userId = parseInt(id, 10)
-        if (isNaN(userId)) {
-            return NextResponse.json(
-                { message: "Invalid ID" },
-                { status: 400 }
-            )
+        if (!/^\d+$/.test(id)) {
+            return NextResponse.json({ message: "ID inválido" }, { status: 400 });
         }
+        const userId = Number(id);
+
 
         const authUser = await getAuthUser()
-        
 
-        if (!authUser || authUser.user_id !== userId && authUser.role !== "admin") {
-            return NextResponse.json(
-                { message: "No autorizado" },
-                { status: 401 }
-            )
+
+        if (!authUser || (authUser.user_id !== userId && authUser.role !== "admin")) {
+            return NextResponse.json({ message: "No autorizado" }, { status: 403 });
         }
 
         const { email } = await req.json()
@@ -38,9 +33,14 @@ export async function PUT(req: Request, { params }: Params) {
             )
         }
 
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return NextResponse.json({ message: "Email inválido" }, { status: 400 });
+        }
+
         const existing = await pool.query(
-            'SELECT user_id FROM users WHERE email = $1', [email]
-        )
+            'SELECT user_id FROM users WHERE LOWER(email) = LOWER($1)',
+            [email]
+        );
 
         if ((existing.rowCount ?? 0) > 0 && existing.rows[0].user_id !== userId) {
             return NextResponse.json({ message: "El email ya esta en uso" }, { status: 409 })

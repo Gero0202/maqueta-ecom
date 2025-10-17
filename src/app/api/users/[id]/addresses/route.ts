@@ -9,11 +9,11 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
     try {
         const { id } = await params;
-        const userId = parseInt(id, 10);
-
-        if (isNaN(userId)) {
-            return NextResponse.json({ message: "ID no valido" }, { status: 400 });
+        if (!/^\d+$/.test(id)) {
+            return NextResponse.json({ message: "ID inválido" }, { status: 400 });
         }
+        const userId = Number(id);
+
 
         const authUser = await getAuthUser();
         if (!authUser) {
@@ -40,11 +40,11 @@ export async function GET(req: Request, { params }: RouteParams) {
 export async function POST(req: Request, { params }: RouteParams) {
     try {
         const { id } = await params;
-        const userId = parseInt(id, 10);
-
-        if (isNaN(userId)) {
-            return NextResponse.json({ message: "ID no válido" }, { status: 400 });
+        if (!/^\d+$/.test(id)) {
+            return NextResponse.json({ message: "ID inválido" }, { status: 400 });
         }
+        const userId = Number(id);
+
 
         const authUser = await getAuthUser();
         if (!authUser) {
@@ -55,7 +55,17 @@ export async function POST(req: Request, { params }: RouteParams) {
             return NextResponse.json({ message: "No tienes permiso" }, { status: 403 });
         }
 
-        const { street, city, state, zip_code, number_house, country } = await req.json();
+        // const { street, city, state, zip_code, number_house, country } = await req.json();
+
+        const body = await req.json();
+        const clean = (v: any) => typeof v === "string" ? v.trim().replace(/[<>]/g, "") : v;
+
+        const street = clean(body.street);
+        const city = clean(body.city);
+        const state = clean(body.state);
+        const zip_code = clean(body.zip_code);
+        const number_house = clean(body.number_house);
+        const country = clean(body.country);
 
         if (!street || !city || !zip_code || !country || !number_house) {
             return NextResponse.json({ message: "Faltan campos obligatorios" }, { status: 400 });
@@ -64,8 +74,12 @@ export async function POST(req: Request, { params }: RouteParams) {
         const repeatAddress = await pool.query(
             `SELECT 1 
             FROM addresses 
-            WHERE user_id = $1 AND number_house = $2`,
-            [userId, number_house]
+            WHERE user_id = $1 
+                AND LOWER(street) = LOWER($2)
+                AND number_house = $3 
+                AND zip_code = $4 
+                AND LOWER(city) = LOWER($5)`,
+            [userId, street, number_house, zip_code, city]
         );
 
         if ((repeatAddress.rowCount ?? 0) > 0) {
@@ -90,6 +104,7 @@ export async function POST(req: Request, { params }: RouteParams) {
 
         return NextResponse.json(result.rows[0], { status: 201 });
     } catch (error) {
+        console.error("Error al crear dirección:", error);
         return NextResponse.json({ message: "Error al crear dirección" }, { status: 500 });
     }
 }
