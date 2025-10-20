@@ -67,7 +67,7 @@ export async function DELETE() {
         const { cart_id, status } = cartRes.rows[0];
         if (status === 'abandoned') {
             await client.query('ROLLBACK');
-            return NextResponse.json({ message: "Carrito ya abandonado" }, { status: 400 });
+            return NextResponse.json({ message: "El carrito ya fue abandonado previamente" }, { status: 400 });
         }
 
         const deleteRes = await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cart_id]);

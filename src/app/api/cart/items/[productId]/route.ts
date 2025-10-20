@@ -19,8 +19,19 @@ export async function PUT(req: Request, { params }: Params) {
         if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 });
 
         const { productId } = await params;
+
+        if (!/^\d+$/.test(productId)) {
+            return NextResponse.json({ message: "ID de producto inválido" }, { status: 400 });
+        }
+
+
         const productIdConst = parseInt(productId, 10);
         const { quantity } = (await req.json()) as Body;
+
+        if (typeof quantity !== "number") {
+            return NextResponse.json({ message: "El campo quantity debe ser numérico" }, { status: 400 });
+        }
+
 
         if (quantity === undefined || isNaN(quantity)) {
             return NextResponse.json({ message: "quantity es obligatorio" }, { status: 400 });
@@ -52,12 +63,18 @@ export async function PUT(req: Request, { params }: Params) {
             `SELECT cart_item_id, quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
             [cartId, productIdConst]
         );
+
+        if (currentItemRes.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return NextResponse.json({ message: "Item no encontrado en el carrito" }, { status: 404 });
+        }
+
         const currentQuantity = currentItemRes.rows[0]?.quantity || 0;
 
         if (quantity > stock) {
             await client.query("ROLLBACK");
             return NextResponse.json(
-                { message: "La cantidad solicitada supera el stock disponible" },
+                { message: `Solo hay ${stock} unidades disponibles de este producto` },
                 { status: 400 }
             );
         }
@@ -110,6 +127,12 @@ export async function DELETE(req: Request, { params }: Params) {
         await client.query("BEGIN");
 
         const { productId } = await params;
+
+        if (!/^\d+$/.test(productId)) {
+            return NextResponse.json({ message: "ID de producto inválido" }, { status: 400 });
+        }
+
+
         const productIdConst = parseInt(productId, 10);
 
         const cartRes = await client.query(
@@ -121,6 +144,16 @@ export async function DELETE(req: Request, { params }: Params) {
             return NextResponse.json({ message: "Carrito no encontrado" }, { status: 404 });
         }
         const cartId = cartRes.rows[0].cart_id;
+
+        const itemRes = await client.query(
+            `SELECT cart_item_id, quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
+            [cartId, productIdConst]
+        );
+
+        if (itemRes.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return NextResponse.json({ message: "Item no encontrado en el carrito" }, { status: 404 });
+        }
 
         const delRes = await client.query(
             `DELETE FROM cart_items WHERE cart_id = $1 AND product_id = $2 RETURNING *`,

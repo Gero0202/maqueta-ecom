@@ -14,6 +14,11 @@ export async function POST(req: Request) {
         if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 });
 
         const { product_id, quantity = 1 } = (await req.json()) as Body;
+
+        if (typeof product_id !== "number" || typeof quantity !== "number") {
+            return NextResponse.json({ message: "Tipos de datos inválidos" }, { status: 400 });
+        }
+
         if (!product_id || quantity <= 0) {
             return NextResponse.json({ message: "product_id y quantity válidos son requeridos" }, { status: 400 });
         }
@@ -26,9 +31,14 @@ export async function POST(req: Request) {
         );
         if (prodRes.rows.length === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ message: "Producto no encontrado" }, { status: 404 });
+            return NextResponse.json({ message: `El producto con ID ${product_id} no existe` }, { status: 404 });
         }
         const prod = prodRes.rows[0];
+
+        if (prod.stock <= 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: "Producto sin stock disponible" }, { status: 400 });
+        }
 
         let cartRes = await client.query(
             `SELECT cart_id FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`,
