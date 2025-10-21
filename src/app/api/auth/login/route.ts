@@ -5,8 +5,7 @@ import jwt from "jsonwebtoken";
 
 
 interface LoginData {
-    identifier: string; 
-    //email: string;
+    identifier: string;
     password: string
 }
 
@@ -25,9 +24,16 @@ export async function POST(req: Request) {
             )
         }
 
+        if (password.length < 8) {
+            return NextResponse.json(
+                { message: "La contraseña debe tener al menos 8 caracteres." },
+                { status: 400 }
+            );
+        }
+
         const result = await pool.query('SELECT * FROM users WHERE email = $1 OR username = $1', [identifier])
         const user = result.rows[0]
-        
+
 
         if (!user) {
             return NextResponse.json(
@@ -51,11 +57,11 @@ export async function POST(req: Request) {
             )
         }
 
-       
+
         const token = jwt.sign(
             { user_id: user.user_id, role: user.role },
             JWT_SECRET,
-            { expiresIn: '7d' } 
+            { expiresIn: '7d' }
         );
 
 

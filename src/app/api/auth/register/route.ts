@@ -22,22 +22,31 @@ export async function POST(req: Request) {
         const body = (await req.json()) as RegisterData;
         const { username, name, email, password, avatar, phone } = body;
 
+        const cleanUsername = username?.trim();
+        const cleanName = name?.trim();
+        const cleanEmail = email?.trim().toLowerCase();
+        const cleanPhone = phone?.trim();
+
 
         if (
-            !username || 
-            username.length < 3 || 
-            username.length > 50 || 
-            !name || 
-            name.length < 2 || 
-            name.length > 70 || 
-            !email || 
-            !password || 
-            password.length < 8 || 
-            !phone||
-            phone.length > 40) {
-            await client.query('ROLLBACK');
+            !cleanUsername ||
+            cleanUsername.length < 3 ||
+            cleanUsername.length > 50 ||
+            !/^[a-zA-Z0-9_]+$/.test(cleanUsername) ||
+            !cleanName ||
+            cleanName.length < 2 ||
+            cleanName.length > 70 ||
+            !cleanEmail ||
+            !password ||
+            password.length < 8 ||
+            (cleanPhone && !/^[0-9+\-\s()]{6,20}$/.test(cleanPhone))
+        ) {
+            await client.query("ROLLBACK");
             return NextResponse.json(
-                { message: "Datos de registro invalidos. Por favor, revisa que todos los campos estén completos y cumplan los requisitos." },
+                {
+                    message:
+                        "Datos de registro inválidos. Verifica los campos: username, nombre, email, contraseña y teléfono.",
+                },
                 { status: 400 }
             );
         }
@@ -52,11 +61,18 @@ export async function POST(req: Request) {
         }
 
 
-        const emailCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (emailCheck.rows.length > 0) {
-            await client.query('ROLLBACK');
+        const existingUser = await client.query(
+            "SELECT user_id FROM users WHERE email = $1 OR username = $2",
+            [cleanEmail, cleanUsername]
+        );
+
+        if (existingUser.rows.length > 0) {
+            await client.query("ROLLBACK");
             return NextResponse.json(
-                { message: "El correo ya esta registrado" },
+                {
+                    message:
+                        "El email o nombre de usuario ya están registrados. Usa otros.",
+                },
                 { status: 400 }
             );
         }
@@ -64,10 +80,10 @@ export async function POST(req: Request) {
         const hashedPassword = await hashpassword(password);
 
         const defaultAvatar = "https://i.pinimg.com/736x/3f/94/70/3f9470b34a8e3f526dbdb022f9f19cf7.jpg";
-        let finalAvatar = avatar || defaultAvatar;
+        let finalAvatar = avatar?.trim() || defaultAvatar;
 
-        if (avatar) { 
-            const validImageExtensions = /\.(jpg|jpeg|png)$/i; 
+        if (avatar) {
+            const validImageExtensions = /\.(jpg|jpeg|png)$/i;
             if (!validImageExtensions.test(avatar)) {
                 await client.query('ROLLBACK');
                 return NextResponse.json(
@@ -76,65 +92,74 @@ export async function POST(req: Request) {
                 );
             }
         }
-            const forwardedFor = req.headers.get('x-forwarded-for');
-            const ip =
-                (forwardedFor?.split(",")[0]?.trim()) ||
-                (req.headers.get("x-real-ip")) ||
-                "IP no disponible";
+        const forwardedFor = req.headers.get('x-forwarded-for');
+        const ip =
+            (forwardedFor?.split(",")[0]?.trim()) ||
+            (req.headers.get("x-real-ip")) ||
+            "IP no disponible";
 
 
 
-            const checkLimit = await client.query(`
+        const checkLimit = await client.query(`
             SELECT COUNT(*) FROM users 
             WHERE ip_address = $1 AND created_at >= NOW() - INTERVAL '5 days'
         `, [ip]);
 
-            const registrosRecientes = parseInt(checkLimit.rows[0].count, 10);
+        const registrosRecientes = parseInt(checkLimit.rows[0].count, 10);
 
-            if (registrosRecientes >= 3) {
-                await client.query('ROLLBACK');
-                return NextResponse.json(
-                    { message: "Se ha alcanzado el limite de registros desde esta IP en los ultimos 5 días" },
-                    { status: 429 }
-                );
-            }
-
-            const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-            const userData = {
-                username,
-                name,
-                email,
-                password: hashedPassword,
-                avatar: finalAvatar,
-                phone: phone || null,
-                role: 'customer',
-                ip_address: ip,
-                verify_code: verifyCode,
-                is_verified: false,
-                created_at: new Date(),
-                updated_at: new Date()
-            };
-
-            const { text, values } = buildInsertQuery('users', userData, ['user_id', 'name', 'username', 'email', 'avatar', 'phone', 'role', 'created_at']);
-            const result = await client.query(text, values);
-
-
-            await sendEmailOfRegister({ email, verifyCode });
-            await client.query('COMMIT');
-
-            return NextResponse.json(result.rows[0], { status: 201 });
-
-        } catch (error) {
+        if (registrosRecientes >= 3) {
             await client.query('ROLLBACK');
-            console.error("❌ Error en register:", error); // 👈 agrega esto
-
             return NextResponse.json(
-                { message: "Error interno del servidor al registrar usuario." },
-                { status: 500 }
+                { message: "Se ha alcanzado el limite de registros desde esta IP en los ultimos 5 días" },
+                { status: 429 }
             );
-        } finally {
-            client.release();
         }
+
+        const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const userData = {
+            username: cleanUsername,
+            name: cleanName,
+            email: cleanEmail,
+            password: hashedPassword,
+            avatar: finalAvatar,
+            phone: cleanPhone || null,
+            role: 'customer',
+            ip_address: ip,
+            verify_code: verifyCode,
+            is_verified: false,
+            created_at: new Date(),
+            updated_at: new Date()
+        };
+
+        const { text, values } = buildInsertQuery('users', userData, [
+            'user_id',
+            'name',
+            'username',
+            'email',
+            'avatar',
+            'phone',
+            'role',
+            'created_at'
+        ]);
+        const result = await client.query(text, values);
+
+
+        await sendEmailOfRegister({ email, verifyCode });
+        await client.query('COMMIT');
+
+        return NextResponse.json(result.rows[0], { status: 201 });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("❌ Error en register:", error); // 👈 agrega esto
+
+        return NextResponse.json(
+            { message: "Error interno del servidor al registrar usuario." },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
     }
+}
 

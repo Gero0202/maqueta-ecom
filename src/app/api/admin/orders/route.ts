@@ -8,10 +8,16 @@ export async function GET(req: Request) {
 
   try {
     const user = await getAuthUser();
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ message: "No autorizado" }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ message: "No autenticado" }, { status: 401 });
     }
 
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { message: "Acceso denegado: se requieren permisos de administrador" },
+        { status: 403 }
+      );
+    }
     const url = new URL(req.url);
     const status = url.searchParams.get("status");
     const userId = url.searchParams.get("user_id");
@@ -52,10 +58,10 @@ export async function GET(req: Request) {
     query += " ORDER BY o.created_at DESC";
 
     const ordersRes = await client.query(query, params);
-    
+
     // Mapeo de resultados para agrupar ítems por orden
     const ordersMap = new Map();
-    
+
     for (const row of ordersRes.rows) {
       if (!ordersMap.has(row.order_id)) {
         ordersMap.set(row.order_id, {
@@ -69,7 +75,7 @@ export async function GET(req: Request) {
           items: [],
         });
       }
-      
+
       // Agrega el ítem a la orden correspondiente
       if (row.product_id) {
         ordersMap.get(row.order_id).items.push({

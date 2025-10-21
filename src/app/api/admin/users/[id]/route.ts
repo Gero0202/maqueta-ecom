@@ -3,9 +3,9 @@ import pool from "@/app/lib/db"
 import { getAuthUser } from "@/app/lib/auth"
 
 type Params = {
-    params: Promise<{
-        id: string
-    }>
+  params: Promise<{
+    id: string
+  }>
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -39,7 +39,7 @@ export async function PUT(req: Request, { params }: Params) {
         role?: string
       }
 
-    const fields = { 
+    const fields = {
       name,
       username,
       email,
@@ -61,6 +61,28 @@ export async function PUT(req: Request, { params }: Params) {
       )
     }
 
+    // ✅ Validaciones adicionales
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { message: "Formato de email inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (phone && !/^[0-9+\-() ]{6,20}$/.test(phone)) {
+      return NextResponse.json(
+        { message: "Formato de teléfono inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (role && !["admin", "customer", "seller"].includes(role)) {
+      return NextResponse.json(
+        { message: "Rol inválido. Solo se permiten 'admin' o 'customer'" },
+        { status: 400 }
+      );
+    }
+
     // Verificar username único si viene actualizado
     if (username) {
       const check = await pool.query(
@@ -75,6 +97,19 @@ export async function PUT(req: Request, { params }: Params) {
       }
     }
 
+    if (email) {
+      const checkEmail = await pool.query(
+        "SELECT user_id FROM users WHERE email = $1",
+        [email]
+      );
+      if (checkEmail.rows.length > 0 && checkEmail.rows[0].user_id !== userId) {
+        return NextResponse.json(
+          { message: "El email ya está en uso" },
+          { status: 409 }
+        );
+      }
+    }
+
     // Construir SQL dinámico
     const setClause = entries
       .map(([key], index) => `${key} = $${index + 1}`)
@@ -82,8 +117,7 @@ export async function PUT(req: Request, { params }: Params) {
     const values = entries.map(([, value]) => value)
 
     await pool.query(
-      `UPDATE users SET ${setClause} WHERE user_id = $${
-        entries.length + 1
+      `UPDATE users SET ${setClause} WHERE user_id = $${entries.length + 1
       }`,
       [...values, userId]
     )
