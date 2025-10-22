@@ -218,6 +218,13 @@ CREATE TABLE orders (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+agregar la columna de notificado para enviar el email de
+mercado pago ALTER TABLE orders:  ADD COLUMN notificado BOOLEAN DEFAULT false;
+
+agregar la columna de addresses para el envio y que el admin
+vea la direccion para hacer el envio : ALTER TABLE orders
+ADD COLUMN address_id INTEGER REFERENCES addresses(address_id);
+
 -- ==========================
 -- 7. ORDER_ITEMS
 -- ==========================

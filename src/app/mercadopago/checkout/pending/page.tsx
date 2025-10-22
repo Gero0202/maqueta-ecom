@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import styles from "./Pending.module.css";
+import styles from "@/app/styles/pendingMp.module.css";
 
 interface PaymentInfo {
   id: string;

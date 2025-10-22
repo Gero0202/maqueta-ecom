@@ -28,9 +28,8 @@ export default function Navbar() {
 
         {/* Links */}
         <ul
-          className={`${styles["navbar__links"]} ${
-            open ? styles["navbar__links--open"] : ""
-          }`}
+          className={`${styles["navbar__links"]} ${open ? styles["navbar__links--open"] : ""
+            }`}
         >
           <li className={styles["navbar__item"]}>
             <Link href="/" className={styles["navbar__link"]}>
@@ -48,6 +47,7 @@ export default function Navbar() {
             </Link>
           </li>
 
+          {/* Si NO hay usuario logueado */}
           {!currentUser ? (
             <>
               <li className={styles["navbar__item"]}>
@@ -63,12 +63,16 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <li className={styles["navbar__item"]}>
-                <Link href="/cart" className={styles["navbar__link"]}>
-                  🛒
-                </Link>
-              </li>
+              {/* 🛒 Carrito solo si NO es admin */}
+              {currentUser.role !== "admin" && (
+                <li className={styles["navbar__item"]}>
+                  <Link href="/cart" className={styles["navbar__link"]}>
+                    🛒
+                  </Link>
+                </li>
+              )}
 
+              {/* ⚙️ Panel Admin solo si es admin */}
               {currentUser.role === "admin" && (
                 <li className={styles["navbar__item"]}>
                   <Link href="/admin" className={styles["navbar__link"]}>
@@ -77,12 +81,14 @@ export default function Navbar() {
                 </li>
               )}
 
+              {/* 👤 Perfil */}
               <li className={styles["navbar__item"]}>
                 <Link href="/online" className={styles["navbar__link"]}>
                   👤 Perfil
                 </Link>
               </li>
 
+              {/* 🚪 Logout */}
               <li className={styles["navbar__item"]}>
                 <button
                   onClick={logout}

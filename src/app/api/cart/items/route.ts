@@ -13,6 +13,13 @@ export async function POST(req: Request) {
         const user = await getAuthUser();
         if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 });
 
+        if (user.role === "admin") {
+            return NextResponse.json(
+                { message: "Los administradores no pueden agregar productos al carrito" },
+                { status: 403 }
+            );
+        }
+
         const { product_id, quantity = 1 } = (await req.json()) as Body;
 
         if (typeof product_id !== "number" || typeof quantity !== "number") {

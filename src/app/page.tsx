@@ -45,12 +45,24 @@ export default function Home() {
         body: JSON.stringify({ product_id: productId, quantity }),
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.message || "Error al agregar al carrito")
-      }
+      // if (!res.ok) {
+      //   const errorData = await res.json()
+      //   throw new Error(errorData.message || "Error al agregar al carrito")
+      // }
 
       const data = await res.json()
+
+      if (!res.ok) {
+        // Si el mensaje viene del backend
+        if (res.status === 400 && data.message?.includes("stock")) {
+          alert("❌ Este producto no tiene stock suficiente.");
+        } else {
+          alert(data.message || "Error al agregar al carrito.");
+        }
+        return;
+      }
+
+
       console.log("✅ Producto agregado al carrito:", data)
       alert("AGREGADO AL CARRITO")
       // acá podrías mostrar un toast o usar tu ErrorContext para notificar éxito

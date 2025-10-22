@@ -6,13 +6,13 @@ import pool from "@/app/lib/db";
 export async function POST(req: Request) {
     const client = await pool.connect()
     try {
-        const user = await getAuthUser()
-        if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
+        const userPayload = await getAuthUser()
+        if (!userPayload) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
 
         // 1️⃣ Traemos el carrito activo
         const cartRes = await client.query(
             `SELECT cart_id FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`,
-            [user.user_id]
+            [userPayload.user_id]
         );
 
         if (cartRes.rows.length === 0) {
@@ -51,13 +51,16 @@ export async function POST(req: Request) {
 
         console.log("TOTAL LOGEADO DE COIGO: ", total);
 
+        const userRes = await client.query('SELECT email, name FROM users WHERE user_id = $1', [userPayload.user_id]);
+        const user = userRes.rows[0];
+
 
         const preferenceData = {
             items,
-            payer: { email: user.email },
-            metadata: { 
-                user_id: user.user_id,
-                cartId: cartId
+            payer: { email: user.email }, // en produccion paymentData.payer.email.
+            metadata: {
+                user_id: userPayload.user_id,
+                cart_id: cartId
             },
             back_urls: {
                 success: `${process.env.FRONT_URL}/mercadopago/checkout/success`,
@@ -69,10 +72,11 @@ export async function POST(req: Request) {
         };
 
         const result = await preference.create({ body: preferenceData })
+        //console.log("PREFERENCE DATA RESULTTTT: ", result);
         if (!result.id) {
             return NextResponse.json({ error: "No se pudo crear la preferencia" }, { status: 500 });
         }
-        return NextResponse.json({id: result.id, init_point: result.init_point},{ status: 201 });
+        return NextResponse.json({ id: result.id, init_point: result.init_point }, { status: 201 });
     } catch (error) {
         console.error("Error creating MP preference:", error);
         return NextResponse.json({ message: "Error interno" }, { status: 500 });
