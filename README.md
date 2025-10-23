@@ -163,6 +163,14 @@ CREATE TABLE addresses (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+cambios en algunas columnas : 
+ALTER TABLE addresses 
+RENAME COLUMN state TO province;
+
+ALTER TABLE addresses 
+ADD COLUMN description TEXT;
+
+
 -- ==========================
 -- 3. PRODUCTS
 -- ==========================

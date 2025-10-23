@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import style from "@/app/styles/cart.module.css"
 import CheckoutButton from "../components/CheckoutButton"
+import { useAuth } from "../context/AuthContext"
 
 interface CartItem {
     cart_item_id: number
@@ -21,12 +22,44 @@ interface Cart {
     user_email: string;
 }
 
+interface Address {
+    address_id: number
+    street: string
+    city: string
+    province: string
+    zip_code: string
+    country: string
+    number_house: string
+}
+
 
 export default function CartPage() {
     const [cart, setCart] = useState<Cart | null>(null);
+    const [addresses, setAddresses] = useState<Address[]>([])
+    const [selectedAddressId, setSelectedAddressId] = useState<number | "new" | null>(null)
+    const [newAddress, setNewAddress] = useState({ street: "", city: "", province: "", zip_code: "", number_house: "", country: "" })
     // const [cart, setCart] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const { currentUser } = useAuth()
+
+    useEffect(() => {
+    if (!currentUser) return; // espera a que currentUser se cargue
+    const fetchAddresses = async () => {
+        try {
+            const res = await fetch(`/api/users/${currentUser.user_id}/addresses`);
+            if (!res.ok) throw new Error("Error al cargar direcciones");
+            const data = await res.json();
+            setAddresses(data.addresses?.filter(Boolean) || [])
+            if (data.addresses?.length) setSelectedAddressId(data.addresses[0].address_id);
+        } catch (err: any) {
+            console.error(err);
+        }
+    };
+
+    fetchAddresses();
+}, [currentUser]);
+
 
     // 📌 Cargar carrito
     const fetchCart = async () => {
@@ -47,6 +80,44 @@ export default function CartPage() {
     useEffect(() => {
         fetchCart()
     }, [])
+
+    // 📌 Cargar direcciones del usuario
+    // const fetchAddresses = async () => {
+    //     try {
+    //         const res = await fetch(`/api/users/${currentUser!.user_id}/addresses`)
+    //         if (!res.ok) throw new Error("Error al cargar direcciones")
+    //         const data = await res.json()
+    //         setAddresses(data.addresses || [])
+    //         if (data.addresses?.length) setSelectedAddressId(data.addresses[0].address_id)
+    //     } catch (err: any) {
+    //         console.error(err)
+    //     }
+    // }
+
+    // useEffect(() => {
+    //     fetchCart()
+    //     fetchAddresses()
+    // }, [])
+
+    // 📌 Agregar nueva dirección
+    const handleAddAddress = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            if (!currentUser) return; 
+            const res = await fetch(`/api/users/${currentUser.user_id}/addresses`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newAddress),
+            })
+            if (!res.ok) throw new Error("Error al agregar dirección")
+            const data = await res.json()
+            setAddresses((prev) => [...prev, data])
+            setSelectedAddressId(data.address_id)
+            setNewAddress({ street: "", city: "", province: "", zip_code: "", number_house: "", country: "" })
+        } catch (err: any) {
+            alert(err.message)
+        }
+    }
 
     // 📌 Actualizar cantidad
     const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -149,13 +220,84 @@ export default function CartPage() {
                         ))}
                     </ul>
 
+                    {/* 🔹 Selección de dirección */}
+                    <div className={style["address-section"]}>
+                        <h3>Seleccionar dirección de entrega</h3>
+                        <select
+                            value={selectedAddressId ?? ""}
+                            onChange={(e) => {
+                                const value = e.target.value
+                                setSelectedAddressId(value === "new" ? "new" : Number(value))
+                            }}
+                        >
+                            {addresses.map((addr) => (
+                                <option key={addr.address_id} value={addr.address_id}>
+                                    {addr.street}, {addr.city}
+                                </option>
+                            ))}
+                            <option value="new"> + Agregar nueva dirección</option>
+                        </select>
+
+                        {selectedAddressId === "new" && (
+                            <form onSubmit={handleAddAddress} className={style["new-address-form"]}>
+                                <input
+                                    type="text"
+                                    placeholder="Calle"
+                                    value={newAddress.street}
+                                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Ciudad"
+                                    value={newAddress.city}
+                                    onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Provincia"
+                                    value={newAddress.province}
+                                    onChange={(e) => setNewAddress({ ...newAddress, province: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Pais"
+                                    value={newAddress.country}
+                                    onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Numero de casa/dpto"
+                                    value={newAddress.number_house}
+                                    onChange={(e) => setNewAddress({ ...newAddress, number_house: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Código postal"
+                                    value={newAddress.zip_code}
+                                    onChange={(e) => setNewAddress({ ...newAddress, zip_code: e.target.value })}
+                                    required
+                                />
+                                <button type="submit">Guardar dirección</button>
+                            </form>
+                        )}
+                    </div>
+
                     <div className={style["footer"]}>
                         <button onClick={clearCart} className={style["clear-btn"]}>
                             Vaciar Carrito
                         </button>
                         <div className={style["summary"]}>
                             <p>Total: ${(total ?? 0).toFixed(2)}</p>
-                            <CheckoutButton cartId={cart.cart_id} userEmail={cart.user_email}/>
+                            <CheckoutButton
+                                cartId={cart.cart_id}
+                                userEmail={cart.user_email}
+                                addressId={selectedAddressId && selectedAddressId !== "new" ? selectedAddressId : null}
+                            />
                         </div>
                     </div>
                 </>

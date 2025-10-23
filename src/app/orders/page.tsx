@@ -7,7 +7,7 @@ import Image from "next/image";
 import Spinner from "../components/Spinner";
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<(Order & { items: OrderItem[] })[]>([]);
+  const [orders, setOrders] = useState<(Order & { items: OrderItem[]; address?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -47,6 +47,21 @@ export default function OrdersPage() {
             <span>Total: ${Number(order.total_amount).toFixed(2)}</span>
             <span>Fecha: {new Date(order.created_at).toLocaleDateString()}</span>
           </div>
+
+          {/* 📍 Sección de dirección */}
+          {order.address && (
+            <div className={styles.addressSection}>
+              <h4>Dirección de entrega:</h4>
+              <p>
+                {order.address.street} {order.address.number},{" "}
+                {order.address.city}, {order.address.province}
+              </p>
+              <p>Código Postal: {order.address.postal_code}</p>
+              {order.address.description && (
+                <p>Descripción: {order.address.description}</p>
+              )}
+            </div>
+          )}
 
           <div className={styles.items}>
             {order.items.map((item) => (

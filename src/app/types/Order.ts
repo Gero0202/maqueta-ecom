@@ -9,6 +9,14 @@ export interface Order {
   updated_at: string;
   user_name?: string;
   user_email?: string;
+  address?: {
+    street: string;
+    number_house: string;
+    city: string;
+    province: string;
+    zip_code: string;
+    description: string;
+  } | null
 }
 
 export interface OrderItem {

@@ -9,7 +9,18 @@ export async function POST(req: Request) {
         const userPayload = await getAuthUser()
         if (!userPayload) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
 
-        // 1️⃣ Traemos el carrito activo
+
+        // 📩 1️⃣ Leer el body que envía el CheckoutButton
+        const body = await req.json();
+        console.log("📦 BODY RECIBIDO:", body); // <---- AGREGAR ESTO
+
+        const { addressId } = body;
+        if ( !addressId) {
+            return NextResponse.json({ message: "Faltan datos del carrito o dirección" }, { status: 400 })
+            
+        }
+
+        //1️⃣ Traemos el carrito activo
         const cartRes = await client.query(
             `SELECT cart_id FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`,
             [userPayload.user_id]
@@ -60,7 +71,8 @@ export async function POST(req: Request) {
             payer: { email: user.email }, // en produccion paymentData.payer.email.
             metadata: {
                 user_id: userPayload.user_id,
-                cart_id: cartId
+                cart_id: cartId,
+                address_id: addressId
             },
             back_urls: {
                 success: `${process.env.FRONT_URL}/mercadopago/checkout/success`,

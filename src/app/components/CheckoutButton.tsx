@@ -1,17 +1,29 @@
 "use client";
 import { useState } from "react";
 
-export default function CheckoutButton({ cartId, userEmail }: { cartId: number; userEmail: string }) {
+interface CheckoutButtonProps {
+    cartId: number
+    userEmail: string
+    addressId: number | null
+}
+
+export default function CheckoutButton({ cartId, userEmail, addressId }: CheckoutButtonProps) {
     const [loading, setLoading] = useState(false);
 
     const handleCheckout = async () => {
+
+        if (!addressId) {
+            alert("Por favor, selecciona una dirección de entrega antes de continuar.")
+            return
+        }
+
         try {
             setLoading(true);
 
             const res = await fetch("/api/mp/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cartId, userEmail }),
+                body: JSON.stringify({ cartId, userEmail, addressId }),
             });
 
             const data = await res.json();

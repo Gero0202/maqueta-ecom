@@ -3,7 +3,7 @@ import pool from "@/app/lib/db";
 import { payment } from "@/app/lib/mp/mp.config";
 import { validateSignature } from "@/app/lib/mp/validSignature";
 import { mapMpStatusToOrderState } from "@/app/lib/mp/mpStatusMapper";
-import { sendEmailPaymentStatus } from "@/app/lib/sendEmailPaymentStatus";
+import sendEmailPaymentStatus from "@/app/lib/sendEmailPaymentStatus";
 import { getAuthUser } from "@/app/lib/auth";
 
 export async function POST(req: Request) {
@@ -41,8 +41,9 @@ export async function POST(req: Request) {
 
         const userId = paymentData.metadata?.user_id;
         const cartId = paymentData.metadata?.cart_id;
+        const addressId = paymentData.metadata.address_id
 
-        if (!userId || !cartId) {
+        if (!userId || !cartId || !addressId) {
             return NextResponse.json(
                 { message: "Faltan metadatos en el pago" },
                 { status: 400 }
@@ -81,17 +82,17 @@ export async function POST(req: Request) {
             // Creamos la orden en la tabla `orders`
             const orderRes = await client.query(
                 `
-                INSERT INTO orders (user_id, total, status, mp_payment_id, created_at, updated_at, notificado)
+                INSERT INTO orders (user_id, total, status, mp_payment_id, address_id, created_at, updated_at, notificado)
                 SELECT c.user_id,
                     SUM(ci.unit_price * ci.quantity) AS total,
-                    $1, $2, NOW(), NOW(), false
+                    $1, $2, $3, NOW(), NOW(), false
                 FROM carts c
                 JOIN cart_items ci ON c.cart_id = ci.cart_id
-                WHERE c.cart_id = $3
+                WHERE c.cart_id = $4
                 GROUP BY c.user_id
                 RETURNING order_id
-             `,
-                [internalStatus, paymentData.id, cartId]
+                 `,
+                [internalStatus, paymentData.id, addressId, cartId]
             );
 
             const orderId = orderRes.rows[0].order_id;

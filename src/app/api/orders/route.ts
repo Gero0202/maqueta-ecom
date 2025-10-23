@@ -102,18 +102,31 @@ export async function GET() {
       return NextResponse.json({ message: "No autenticado" }, { status: 401 });
     }
 
-    // Traer todas las órdenes del usuario
+    // 🔹 Traer órdenes del usuario con total y datos de la dirección
     const ordersRes = await client.query(
-      ` SELECT o.*, COALESCE(SUM(oi.price * oi.quantity), 0) AS total_amount
-        FROM orders o
-        LEFT JOIN order_items oi ON oi.order_id = o.order_id
-        WHERE o.user_id = $1
-        GROUP BY o.order_id
-        ORDER BY o.created_at DESC`,
+      `
+      SELECT 
+        o.*,
+        COALESCE(SUM(oi.price * oi.quantity), 0) AS total_amount,
+        a.street,
+        a.number_house,
+        a.city,
+        a.province,
+        a.zip_code,
+        a.description
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      LEFT JOIN addresses a ON a.address_id = o.address_id
+      WHERE o.user_id = $1
+      GROUP BY 
+        o.order_id,
+        a.street, a.number_house, a.city, a.province, a.zip_code, a.description
+      ORDER BY o.created_at DESC
+      `,
       [user.user_id]
     );
 
-    const orders: (Order & { items: OrderItem[] })[] = [];
+    const orders: (Order & { items: OrderItem[]; address?: any })[] = [];
 
     for (const order of ordersRes.rows) {
       const itemsRes = await client.query(
@@ -127,6 +140,14 @@ export async function GET() {
       orders.push({
         ...order,
         total_amount: Number(order.total_amount),
+        address: {
+          street: order.street,
+          number: order.number,
+          city: order.city,
+          province: order.province,
+          postal_code: order.postal_code,
+          description: order.description ?? null,
+        },
         items: itemsRes.rows.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,

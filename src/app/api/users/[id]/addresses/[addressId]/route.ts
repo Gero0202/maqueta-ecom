@@ -71,12 +71,12 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 })
     }
 
-    const { street, city, state, zip_code, number_house, country } = await req.json()
+    const { street, city, province, zip_code, number_house, country, description } = await req.json()
 
     const clean = (v: any) => typeof v === "string" ? v.trim().replace(/[<>]/g, "") : v;
 
     const existingRes = await client.query(
-      'SELECT street, city, state, zip_code, number_house, country FROM addresses WHERE address_id = $1 AND user_id = $2',
+      'SELECT street, city, province, zip_code, number_house, country, description FROM addresses WHERE address_id = $1 AND user_id = $2',
       [addrId, userId]
     );
 
@@ -88,10 +88,11 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     const streetFinal = street ? clean(street) : existingAddress.street;
     const cityFinal = city ? clean(city) : existingAddress.city;
-    const stateFinal = state ? clean(state) : existingAddress.state;
+    const provinceFinal = province ? clean(province) : existingAddress.province;
     const zipFinal = zip_code ? clean(zip_code) : existingAddress.zip_code;
     const numberFinal = number_house ? clean(number_house) : existingAddress.number_house;
     const countryFinal = country ? clean(country) : existingAddress.country;
+    const finalDescription = description ? clean(description) : existingAddress.description;
 
     if (streetFinal.length > 100) {
       return NextResponse.json({ message: "La calle no puede tener más de 100 caracteres" }, { status: 400 });
@@ -99,7 +100,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     if (cityFinal.length > 50) {
       return NextResponse.json({ message: "La ciudad no puede tener más de 50 caracteres" }, { status: 400 });
     }
-    if (stateFinal && stateFinal.length > 50) {
+    if (provinceFinal && provinceFinal.length > 50) {
       return NextResponse.json({ message: "El estado no puede tener más de 50 caracteres" }, { status: 400 });
     }
     if (zipFinal.length > 20) {
@@ -107,6 +108,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
     }
     if (countryFinal.length > 50) {
       return NextResponse.json({ message: "El país no puede tener más de 50 caracteres" }, { status: 400 });
+    }
+    if (finalDescription.length > 450) {
+      return NextResponse.json({ message: "La descripcion no puede tener más de 450 caracteres" }, { status: 400 });
     }
 
     const duplicateCheck = await client.query(
@@ -122,10 +126,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     const result = await client.query(
       `UPDATE addresses
-       SET street = $1, city = $2, state = $3, zip_code = $4, number_house = $5, country = $6, updated_at = NOW()
-       WHERE address_id = $7 AND user_id = $8
+       SET street = $1, city = $2, province = $3, zip_code = $4, number_house = $5, country = $6, updated_at = NOW(), description = $7
+       WHERE address_id = $8 AND user_id = $9
        RETURNING *`,
-      [streetFinal, cityFinal, stateFinal, zipFinal, numberFinal, countryFinal, addrId, userId]
+      [streetFinal, cityFinal, provinceFinal, zipFinal, numberFinal, countryFinal, finalDescription, addrId, userId]
     );
 
     if (result.rows.length === 0) {

@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: RouteParams) {
         }
 
         const result = await pool.query(
-            `SELECT address_id, street, city, state, zip_code, number_house ,country, is_default
+            `SELECT address_id, street, city, province, zip_code, number_house ,country, is_default, description
        FROM addresses
        WHERE user_id = $1`,
             [userId]
@@ -62,10 +62,11 @@ export async function POST(req: Request, { params }: RouteParams) {
 
         const street = clean(body.street);
         const city = clean(body.city);
-        const state = clean(body.state);
+        const province = clean(body.province);
         const zip_code = clean(body.zip_code);
         const number_house = clean(body.number_house);
         const country = clean(body.country);
+        const description = clean(body.description)
 
         if (!street || !city || !zip_code || !country || !number_house) {
             return NextResponse.json({ message: "Faltan campos obligatorios" }, { status: 400 });
@@ -96,11 +97,13 @@ export async function POST(req: Request, { params }: RouteParams) {
         const hasAddresses = parseInt(existing.rows[0].count, 10) > 0;
 
         const result = await pool.query(
-            `INSERT INTO addresses (user_id, street, city, state, zip_code, number_house ,country, is_default)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING address_id, street, city, state, zip_code, number_house ,country, is_default`,
-            [userId, street, city, state || null, zip_code, number_house, country, hasAddresses ? false : true]
+            `INSERT INTO addresses 
+    (user_id, street, city, province, zip_code, number_house, country, is_default, description)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+   RETURNING address_id, street, city, province, zip_code, number_house, country, is_default, description`,
+            [userId, street, city, province || null, zip_code, number_house, country, hasAddresses ? false : true, description]
         );
+
 
         return NextResponse.json(result.rows[0], { status: 201 });
     } catch (error) {

@@ -52,10 +52,11 @@ export async function GET(req: Request, { params }: RouteParams) {
                     'address_id', a.address_id,
                     'street', a.street,
                     'city', a.city,
-                    'state', a.state,
+                    'province', a.province,
                     'zip_code', a.zip_code,
                     'country', a.country,
-                    'is_default', a.is_default
+                    'is_default', a.is_default,
+                    'description', a.description
                 )
             ) FILTER(WHERE a.address_id IS NOT NULL), '[]'
         ) AS addresses

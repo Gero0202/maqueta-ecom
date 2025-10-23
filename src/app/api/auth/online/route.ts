@@ -38,7 +38,7 @@ export async function GET() {
         }
 
         const addrRes = await pool.query(
-            `SELECT address_id, street, city, state, zip_code, country, is_default 
+            `SELECT address_id, street, city, province, zip_code, country, is_default, description
              FROM addresses 
              WHERE user_id = $1
              ORDER BY is_default DESC, created_at ASC`,

@@ -37,6 +37,15 @@ export default function OrdersPage() {
                     status: o.status,
                     created_at: o.created_at,
                     updated_at: o.updated_at ?? undefined,
+                    address: {
+                        street: o.address?.street ?? "", // ✅ ¡CORREGIDO!
+                        city: o.address?.city ?? "",  // ✅ ¡CORREGIDO!
+                        province: o.address?.province ?? "", // ✅ ¡CORREGIDO!
+                        zip_code: o.address?.zip_code ?? "", // ✅ ¡CORREGIDO!
+                        // Ojo: En el backend le pusiste 'number', así que lo buscamos como 'o.address?.number'
+                        number_house: o.address?.number ?? "", // ✅ ¡CORREGIDO!
+                        description: o.address?.description ?? "", // ✅ ¡CORREGIDO!
+                    },
                 }))
 
                 setOrders(normalized)
@@ -115,6 +124,7 @@ export default function OrdersPage() {
                     <span>Total</span>
                     <span>Fecha</span>
                     <span>Items</span>
+                    <span>Direcciones</span>
                     <span>Acciones</span>
                 </div>
 
@@ -163,6 +173,15 @@ export default function OrdersPage() {
                             ) : (
                                 <p className={styles["no-items"]}>Sin productos</p>
                             )}
+                        </span>
+                        <span data-label="Dirección">
+                            {order.address?.street
+                                ? `Calle: ${order.address.street}, 
+                                   Ciudad: ${order.address.city},
+                                   Provincia ${order.address.province},
+                                   Numero de casa: ${order.address.number_house},
+                                   Codigo Postal: ${order.address.zip_code}`
+                                : "Sin dirección"}
                         </span>
                         <span data-label="Acciones">
                             <button
