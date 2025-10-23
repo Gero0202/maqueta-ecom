@@ -36,6 +36,44 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Error al obtener el pago de Mercado Pago" }, { status: 502 });
         }
 
+        await client.query(
+            `
+            INSERT INTO payments (
+                mp_payment_id, cart_id, user_id, address_id, status, status_detail,
+                transaction_amount, net_received_amount, currency_id, payment_method,
+                installments, payer_email, payer_dni, description, date_created, date_approved, updated_at
+            )
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, NOW())
+            ON CONFLICT (mp_payment_id) DO UPDATE
+            SET
+                status = EXCLUDED.status,
+                status_detail = EXCLUDED.status_detail,
+                transaction_amount = EXCLUDED.transaction_amount,
+                net_received_amount = EXCLUDED.net_received_amount,
+                payment_method = EXCLUDED.payment_method,
+                installments = EXCLUDED.installments,
+                updated_at = NOW();
+    `,
+            [
+                paymentData.id,
+                paymentData.metadata?.cart_id ?? null,
+                paymentData.metadata?.user_id ?? null,
+                paymentData.metadata?.address_id ?? null,
+                paymentData.status,
+                paymentData.status_detail,
+                paymentData.transaction_amount,
+                paymentData.transaction_details?.net_received_amount ?? null,
+                paymentData.currency_id,
+                paymentData.payment_method_id,
+                paymentData.installments,
+                paymentData.payer?.email ?? null,
+                paymentData.payer?.identification?.number ?? null,
+                paymentData.description,
+                paymentData.date_created,
+                paymentData.date_approved
+            ]
+        );
+
         console.log("💬 Notificación recibida. Payment ID:", result.dataId);
         // console.log("🧾 PAYMENT DATA:", paymentData);
 

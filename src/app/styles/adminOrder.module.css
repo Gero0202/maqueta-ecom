@@ -15,7 +15,7 @@
 /* Tabla */
 .table {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 10px;
   border-collapse: collapse;
 }

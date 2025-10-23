@@ -1,6 +1,7 @@
 // Opcional: historial de compras
 export interface Order {
   order_id: number;
+  mp_payment_id: number
   user_id: number;
   items: OrderItem[];
   total_amount: number;

@@ -243,3 +243,35 @@ CREATE TABLE order_items (
   quantity INT NOT NULL CHECK (quantity > 0),
   price NUMERIC(10,2) NOT NULL
 );
+
+-- ==========================
+-- 8. MercadoPago Orden
+-- ==========================
+
+CREATE TABLE payments (
+  payment_id SERIAL PRIMARY KEY,
+  mp_payment_id BIGINT UNIQUE NOT NULL,  -- ID de Mercado Pago
+  cart_id INT,
+  user_id INT REFERENCES users(user_id),
+  address_id INT REFERENCES addresses(address_id),
+  status VARCHAR(50),
+  status_detail VARCHAR(100),
+  transaction_amount DECIMAL(10,2),
+  net_received_amount DECIMAL(10,2),
+  currency_id VARCHAR(10),
+  payment_method VARCHAR(50),
+  installments INT,
+  payer_email VARCHAR(255),
+  payer_dni VARCHAR(50),
+  description TEXT,
+  date_created TIMESTAMP,
+  date_approved TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE orders ADD COLUMN payment_id INT REFERENCES payments(payment_id);
+
+ALTER TABLE payments
+ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+
+

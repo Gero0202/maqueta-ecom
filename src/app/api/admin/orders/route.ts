@@ -25,6 +25,7 @@ export async function GET(req: Request) {
     let query = `
       SELECT
         o.order_id,
+        o.mp_payment_id,
         o.user_id,
         o.status,
         o.created_at,
@@ -77,6 +78,7 @@ export async function GET(req: Request) {
       if (!ordersMap.has(row.order_id)) {
         ordersMap.set(row.order_id, {
           order_id: row.order_id,
+          mp_payment_id: row.mp_payment_id,
           user_id: row.user_id,
           status: row.status,
           created_at: row.created_at,

@@ -20,6 +20,7 @@ export default function OrdersPage() {
 
                 const normalized: Order[] = raw.map((o: any) => ({
                     order_id: Number(o.order_id),
+                    mp_payment_id: Number(o.mp_payment_id),
                     user_id: Number(o.user_id),
                     user_name: o.user_name ?? o.name ?? "",
                     user_email: o.user_email ?? "",
@@ -118,6 +119,7 @@ export default function OrdersPage() {
             <div className={styles["table"]}>
                 <div className={styles["table-header"]}>
                     <span>ID</span>
+                    <span>MercadoPago ID Pago</span>
                     <span>Usuario</span>
                     <span>Email</span>
                     <span>Estado</span>
@@ -131,6 +133,7 @@ export default function OrdersPage() {
                 {orders.map(order => (
                     <div key={order.order_id} className={styles["table-row"]}>
                         <span data-label="ID">{order.order_id}</span>
+                        <span data-label="MercadoPago ID Pago">{order.mp_payment_id}</span>
                         <span data-label="Usuario">{order.user_name}</span>
                         <span data-label="Email">{order.user_email}</span>
                         <span data-label="Estado">
