@@ -36,7 +36,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Error al obtener el pago de Mercado Pago" }, { status: 502 });
         }
 
-        await client.query(
+        const paymentRes = await client.query(
             `
             INSERT INTO payments (
                 mp_payment_id, cart_id, user_id, address_id, status, status_detail,
@@ -52,7 +52,8 @@ export async function POST(req: Request) {
                 net_received_amount = EXCLUDED.net_received_amount,
                 payment_method = EXCLUDED.payment_method,
                 installments = EXCLUDED.installments,
-                updated_at = NOW();
+                updated_at = NOW()
+            RETURNING payment_id;   
     `,
             [
                 paymentData.id,
@@ -73,6 +74,8 @@ export async function POST(req: Request) {
                 paymentData.date_approved
             ]
         );
+
+        const paymentId = paymentRes.rows[0].payment_id
 
         console.log("💬 Notificación recibida. Payment ID:", result.dataId);
         // console.log("🧾 PAYMENT DATA:", paymentData);
@@ -120,17 +123,34 @@ export async function POST(req: Request) {
             // Creamos la orden en la tabla `orders`
             const orderRes = await client.query(
                 `
-                INSERT INTO orders (user_id, total, status, mp_payment_id, address_id, created_at, updated_at, notificado)
-                SELECT c.user_id,
+                INSERT INTO orders (
+                user_id, 
+                total, 
+                status, 
+                mp_payment_id, 
+                payment_id,
+                address_id, 
+                created_at, 
+                updated_at, 
+                notificado
+                )
+                SELECT 
+                c.user_id,
                     SUM(ci.unit_price * ci.quantity) AS total,
-                    $1, $2, $3, NOW(), NOW(), false
+                    $1, 
+                    $2, 
+                    $3,
+                    $4, 
+                    NOW(), 
+                    NOW(), 
+                    false
                 FROM carts c
                 JOIN cart_items ci ON c.cart_id = ci.cart_id
-                WHERE c.cart_id = $4
+                WHERE c.cart_id = $5
                 GROUP BY c.user_id
                 RETURNING order_id
                  `,
-                [internalStatus, paymentData.id, addressId, cartId]
+                [internalStatus, paymentData.id, paymentId, addressId, cartId]
             );
 
             const orderId = orderRes.rows[0].order_id;

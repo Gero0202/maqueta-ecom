@@ -4,7 +4,7 @@ import pool from "@/app/lib/db";
 import { getAuthUser } from "@/app/lib/auth";
 
 interface Params {
-  params: { orderId: string };
+  params: Promise<{ orderId: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ message: "No autenticado" }, { status: 401 });
     }
 
-    const { orderId } = params;
+    const { orderId } = await params;
 
     // Traemos el pago asociado a la orden y verificamos que pertenezca al usuario
     const res = await client.query(

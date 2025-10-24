@@ -4,7 +4,7 @@ import pool from "@/app/lib/db";
 import { getAuthUser } from "@/app/lib/auth";
 
 interface Params {
-    params: { orderId: string };
+    params: Promise<{ orderId: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -12,11 +12,11 @@ export async function GET(req: Request, { params }: Params) {
 
     try {
         const user = await getAuthUser();
-        if (!user || !user.is_admin) {
+        if (!user || user.role !== "admin") {
             return NextResponse.json({ message: "No autorizado" }, { status: 403 });
         }
 
-        const { orderId } = params;
+        const { orderId } = await params;
 
         // Traemos el pago asociado a la orden y la info del usuario
         const res = await client.query(

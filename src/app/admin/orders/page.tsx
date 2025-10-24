@@ -1,5 +1,6 @@
 'use client'
 
+import ViewPaymentButton from "@/app/components/ViewPaymentButton"
 import styles from "@/app/styles/adminOrder.module.css"
 import { Order, OrderStatus } from "@/app/types/Order"
 import { useEffect, useState } from "react"
@@ -193,6 +194,11 @@ export default function OrdersPage() {
                             >
                                 Eliminar
                             </button>
+
+                            <ViewPaymentButton
+                                orderId={order.order_id}
+                                apiPath={`/api/admin/mp/paymentsOrderAdmin/${order.order_id}`}
+                            />
                         </span>
                     </div>
                 ))}

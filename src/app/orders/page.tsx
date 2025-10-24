@@ -5,6 +5,7 @@ import styles from "@/app/styles/orders.module.css"
 import { Order, OrderItem } from "../types/Order";
 import Image from "next/image";
 import Spinner from "../components/Spinner";
+import ViewPaymentButton from "../components/ViewPaymentButton";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<(Order & { items: OrderItem[]; address?: any })[]>([]);
@@ -31,7 +32,7 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  if (loading) return <p className={styles.loading}><Spinner/></p>;
+  if (loading) return <p className={styles.loading}><Spinner /></p>;
   if (error) return <p className={styles.error}>{error}</p>;
 
   return (
@@ -43,6 +44,8 @@ export default function OrdersPage() {
         <div key={order.order_id} className={styles.orderCard}>
           <div className={styles.orderHeader}>
             <span>ID: {order.order_id}</span>
+            <span>Mp Pago: {order.mp_payment_id}</span>
+            <span>Pago ID: {order.payment_id}</span>
             <span>Status: {order.status}</span>
             <span>Total: ${Number(order.total_amount).toFixed(2)}</span>
             <span>Fecha: {new Date(order.created_at).toLocaleDateString()}</span>
@@ -67,8 +70,8 @@ export default function OrdersPage() {
             {order.items.map((item) => (
               <div key={item.product_id} className={styles.item}>
                 {item.image_url && (
-                  <img src={item.image_url} alt="" className={styles.itemImage}/>
-                    
+                  <img src={item.image_url} alt="" className={styles.itemImage} />
+
                 )}
                 <div>
                   <p>{item.name}</p>
@@ -78,6 +81,14 @@ export default function OrdersPage() {
               </div>
             ))}
           </div>
+
+          <div className={styles.paymentButtonWrapper}>
+            <ViewPaymentButton
+              orderId={order.order_id}
+              apiPath={`/api/mp/paymentOrder/${order.order_id}`}
+            />
+          </div>
+
         </div>
       ))}
     </div>
