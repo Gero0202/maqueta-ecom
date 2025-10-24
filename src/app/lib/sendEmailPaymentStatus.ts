@@ -58,9 +58,9 @@ const sendEmailPaymentStatus = async ({
             <h1 style="color: #e53e3e;">Hola ${name}, tu pago fue rechazado 😔</h1>
             <p>Lamentablemente tu pago no pudo ser procesado.</p>
             <p>Podés intentar nuevamente desde tu cuenta o revisar tus medios de pago.</p>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/payments/retry"
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/"
                style="display:inline-block; padding:10px 20px; background:#e53e3e; color:white; text-decoration:none; border-radius:5px; margin-top:10px;">
-               Reintentar pago
+               Volver al inicio
             </a>
             <p style="margin-top:20px; font-size:12px; color:#777;">
                 Equipo de <b>Mi tienda</b>.

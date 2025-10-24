@@ -27,6 +27,8 @@ export async function GET(req: Request, { params }: Params) {
         p.status_detail,
         p.transaction_amount,
         p.net_received_amount,
+        p.payer_email,
+        p.payer_dni,
         p.currency_id,
         p.payment_method,
         p.installments,
@@ -62,6 +64,8 @@ export async function GET(req: Request, { params }: Params) {
 
     const paymentData = {
       mp_payment_id: payment.mp_payment_id,
+      payer_email: payment.payer_email,
+      payer_dni: payment.payer_dni,
       status: payment.payment_status,
       status_detail: payment.status_detail,
       transaction_amount: Number(payment.transaction_amount),

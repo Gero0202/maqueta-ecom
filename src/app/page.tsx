@@ -5,6 +5,8 @@ import { Product } from "./types/Product";
 import Spinner from "./components/Spinner";
 import { useError } from "./context/ErrorContext";
 import ProductList from "./components/ProductList";
+import SearchBar from "./components/SearchBar";
+
 import styles from "@/app/styles/page.module.css"
 import { useRouter } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
@@ -45,11 +47,6 @@ export default function Home() {
         body: JSON.stringify({ product_id: productId, quantity }),
       })
 
-      // if (!res.ok) {
-      //   const errorData = await res.json()
-      //   throw new Error(errorData.message || "Error al agregar al carrito")
-      // }
-
       const data = await res.json()
 
       if (!res.ok) {
@@ -78,6 +75,7 @@ export default function Home() {
   return (
     <>
       <h2>bienvenido</h2>
+      <SearchBar/>
       <ProductList products={products} onAddToCart={handleAddToCart} />
     </>
   );

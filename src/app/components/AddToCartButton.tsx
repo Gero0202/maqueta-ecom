@@ -1,86 +1,59 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react"
 
-type Props = {
-  productId: number
-  initialQuantity?: number
-  // si querés que redirija automáticamente a /cart después de agregar,
-  // pasá showGoToCart={true}
-  showGoToCart?: boolean
-}
+export default function AddToCartButton({ productId }: { productId: number }) {
+  const [loading, setLoading] = useState(false)
 
-export default function AddToCartButton({
-  productId,
-  initialQuantity = 1,
-  showGoToCart = false,
-  onAddToCart
-}: Props & { onAddToCart?: (id: number, qty: number) => void }) {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const router = useRouter();
-
-  const handleAdd = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!onAddToCart) return;
-
-    setLoading(true);
-    setMessage(null);
-
+  const handleAddToCart = async () => {
     try {
-      await onAddToCart(productId, initialQuantity);
-      setMessage("Producto agregado al carrito");
-      if (showGoToCart) router.push("/cart");
-    } catch (err) {
-      setMessage("Error al agregar al carrito");
+      setLoading(true)
+      const res = await fetch("/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (res.status === 400 && data.message?.includes("stock")) {
+          alert("❌ Este producto no tiene stock suficiente.")
+        } else {
+          alert(data.message || "Error al agregar al carrito.")
+        }
+        return
+      }
+
+      console.log("✅ Producto agregado al carrito:", data)
+      alert("✅ Producto agregado al carrito.")
+    } catch (error: any) {
+      console.error("❌ Error agregando al carrito:", error.message)
+      alert("Error al conectar con el servidor.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <button type="button" onClick={handleAdd} disabled={loading}>
+    <button
+      onClick={handleAddToCart}
+      disabled={loading}
+      style={{
+        marginTop: "1rem",
+        backgroundColor: "#2563eb",
+        color: "white",
+        padding: "0.75rem 1.25rem",
+        borderRadius: "8px",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "1rem",
+        transition: "background 0.2s",
+      }}
+    >
       {loading ? "Agregando..." : "Agregar al carrito"}
     </button>
-  );
+  )
 }
-
-
-// export default function AddToCartButton({ productId, initialQuantity = 1, showGoToCart = false }: Props) {
-//   const [loading, setLoading] = useState(false)
-//   const [message, setMessage] = useState<string | null>(null)
-//   const router = useRouter()
-
-//   const handleAdd = async (e: React.MouseEvent) => {
-//     e.preventDefault();
-//     if (!onAddToCart) return;
-
-//     setLoading(true);
-//     setMessage(null);
-
-//     try {
-//       await onAddToCart(productId, initialQuantity);
-//       setMessage("Producto agregado al carrito");
-//       if (showGoToCart) router.push("/cart");
-//     } catch (err) {
-//       setMessage("Error al agregar al carrito");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <button type="button" onClick={handleAdd} disabled={loading}>
-//         {loading ? 'Agregando...' : 'Agregar al carrito'}
-//       </button>
-
-//       {message && (
-//         <div role="status" aria-live="polite" style={{ marginTop: 8 }}>
-//           {message}
-//         </div>
-//       )}
-//     </div>
-//   )
-// }

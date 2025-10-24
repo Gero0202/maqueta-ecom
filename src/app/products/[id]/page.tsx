@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Product } from "@/app/types/Product"
+import AddToCartButton from "@/app/components/AddToCartButton"
+import styles from "@/app/styles/productPage.module.css"
 
 type Params = {
   params: Promise<{ id: string }>
@@ -25,29 +27,33 @@ export default async function ProductPage({ params }: Params) {
   }
 
   return (
-    <div>
-      <div>
+    <div className={styles.container}>
+      <div className={styles.backLink}>
         <Link href="/">← Volver a productos</Link>
       </div>
 
-      <h1>{product.name}</h1>
+      <h1 className={styles.title}>{product.name}</h1>
 
-      <div>
+      <div className={styles.imageWrapper}>
         <img
           src={product.image_url || ""}
           alt={product.name}
-          width={300}
-          height={300}
+          className={styles.image}
         />
       </div>
 
-      <p>{product.description}</p>
-      <p>Precio: ${Number(product.price).toFixed(2)}</p>
-      <p>Stock: {product.stock}</p>
-      <p>Categoría: {product.category}</p>
+      <div className={styles.info}>
+        <p className={styles.description}>{product.description}</p>
+        <p><strong>Precio:</strong> ${Number(product.price).toFixed(2)}</p>
+        <p><strong>Stock:</strong> {product.stock}</p>
+        <p><strong>Categoría:</strong> {product.category}</p>
+      </div>
 
-      <div>
-        <Link href="/cart">Ir al carrito</Link>
+      <div className={styles.actions}>
+        <AddToCartButton productId={Number(id)} />
+        <Link href="/cart" className={styles.cartLink}>
+          Ir al carrito
+        </Link>
       </div>
     </div>
   )

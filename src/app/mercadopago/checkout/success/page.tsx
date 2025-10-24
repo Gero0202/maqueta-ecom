@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "@/app/styles/succesMp.module.css";
+import Link from "next/link";
 
 interface PaymentInfo {
   id: string;
@@ -48,6 +49,11 @@ export default function SuccessPage() {
       <div className={styles["error-container"]}>
         <h1 className={styles["error-title"]}>❌ Error</h1>
         <p className={styles["error-message"]}>{error}</p>
+        <Link href="/">
+          <button>
+            Inicio
+          </button>
+        </Link>
       </div>
     );
 
@@ -56,6 +62,12 @@ export default function SuccessPage() {
       <div className={styles["error-container"]}>
         <h1 className={styles["error-title"]}>⚠️ Pago no encontrado</h1>
         <p className={styles["error-message"]}>No se pudo recuperar la información del pago.</p>
+
+        <Link href="/">
+          <button>
+            Inicio
+          </button>
+        </Link>
       </div>
     );
 
@@ -82,6 +94,13 @@ export default function SuccessPage() {
           </p>
         )}
       </div>
+
+      <Link href="/">
+        <button>
+          Inicio
+        </button>
+      </Link>
+
     </div>
   );
 }

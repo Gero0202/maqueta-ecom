@@ -1,16 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import styles from "@/app/styles/adminProduct.module.css"
 import { Product, NewProduct } from "@/app/types/Product"
-import EditProductModal from "@/app/components/EditProductModal" 
+import EditProductModal from "@/app/components/EditProductModal"
 import CreateProductModal from "@/app/components/createProduct"
+import SearchBarAdmin from "@/app/components/SearchBarAdmin"
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
     const fetchProducts = async () => {
         try {
@@ -18,6 +20,7 @@ export default function ProductsPage() {
             if (!res.ok) throw new Error("Error al cargar productos")
             const data = await res.json()
             setProducts(data.products) // depende de cómo devuelvas la respuesta
+            setFilteredProducts(data.products);
         } catch (error) {
             console.error(error)
         } finally {
@@ -28,6 +31,23 @@ export default function ProductsPage() {
     useEffect(() => {
         fetchProducts()
     }, [])
+
+    // 👇 función que recibe el texto desde el SearchBarAdmin
+    const handleSearch = useCallback(async (term: string) => {
+        if (!term) {
+            setFilteredProducts(products);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/searchAdmin/products?q=${encodeURIComponent(term)}`);
+            if (!res.ok) throw new Error("Error en búsqueda admin");
+            const data = await res.json();
+            setFilteredProducts(data.products || []);
+        } catch (error) {
+            console.error(error);
+        }
+    }, [products]);
 
     const handleUpdate = async (updateData: Partial<Product>) => {
         const res = await fetch(`/api/products/${updateData.product_id}`, {
@@ -51,6 +71,7 @@ export default function ProductsPage() {
         const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
         if (res.ok) {
             setProducts(products.filter((p) => p.product_id !== id));
+            setFilteredProducts(filteredProducts.filter((p) => p.product_id !== id));
         } else {
             alert("Error al eliminar el producto");
         }
@@ -70,23 +91,33 @@ export default function ProductsPage() {
 
         const data = await res.json()
         setProducts(prev => [data, ...prev])
+        setFilteredProducts((prev) => [data, ...prev]);
     }
 
     return (
         <div className={styles["products-page"]}>
             <h1 className={styles["title"]}>Administrar productos</h1>
 
+            {/* 👇 nueva barra de búsqueda con debounce */}
+            <SearchBarAdmin
+                onSearch={handleSearch}
+                placeholder="Buscar producto..."
+                debounceMs={400}
+                minChars={2}
+            />
+
             <button onClick={() => setShowCreateModal(true)} className={styles["btn-create"]}>
                 Crear producto
             </button>
 
+
             {loading ? (
                 <p>Cargando productos...</p>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
                 <p>No hay productos disponibles.</p>
             ) : (
                 <div className={styles["grid"]}>
-                    {products.map((p) => (
+                    {filteredProducts.map((p) => (
                         <div key={p.product_id} className={styles["card"]}>
                             <img src={p.image_url} alt={p.name} className={styles["card-img"]} />
                             <div className={styles["card-body"]}>

@@ -30,6 +30,8 @@ export default function PaymentSummaryModal({
 
                 <div className={styles["payment-details"]}>
                     <p><strong>ID de pago (Mercado Pago):</strong> {paymentData.mp_payment_id || "N/A"}</p>
+                    <p><strong>Email del comprador (Mercado Pago):</strong> {paymentData.payer_email || "N/A"}</p>
+                    <p><strong>DNI del comprador (Mercado Pago):</strong> {paymentData.payer_dni || "N/A"}</p>
                     <p><strong>Estado:</strong> {paymentData.status || "N/A"}</p>
                     <p><strong>Detalle de estado:</strong> {paymentData.status_detail || "N/A"}</p>
                     <p><strong>Monto:</strong> ${paymentData.transaction_amount || "N/A"}</p>

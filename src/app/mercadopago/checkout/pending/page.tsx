@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "@/app/styles/pendingMp.module.css";
+import Link from "next/link";
 
 interface PaymentInfo {
   id: string;
@@ -48,6 +49,12 @@ export default function PendingPage() {
       <div className={styles["error-container"]}>
         <h1 className={styles["error-title"]}>⚠️ Error</h1>
         <p className={styles["error-message"]}>{error}</p>
+
+        <Link href="/">
+          <button>
+            Inicio
+          </button>
+        </Link>
       </div>
     );
 
@@ -82,9 +89,9 @@ export default function PendingPage() {
           </div>
         )}
 
-        <a href="/" className={styles["button"]}>
+        <Link href="/" className={styles["button"]}>
           Volver al inicio
-        </a>
+        </Link>
       </div>
     </div>
   );
