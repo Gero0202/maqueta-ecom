@@ -1,27 +1,55 @@
 'use client'
 
+import SearchBarAdmin from "@/app/components/SearchBarAdmin"
 import ViewPaymentButton from "@/app/components/ViewPaymentButton"
 import styles from "@/app/styles/adminOrder.module.css"
 import { Order, OrderStatus } from "@/app/types/Order"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const res = await fetch("/api/admin/orders")
-                if (!res.ok) throw new Error("Error al obtener órdenes")
-                const data = await res.json()
+     // 🔍 función para traer todas las órdenes (cuando no hay búsqueda)
+    const fetchOrders = useCallback(async () => {
+        try {
+            const res = await fetch("/api/admin/orders")
+            if (!res.ok) throw new Error("Error al obtener órdenes")
+            const data = await res.json()
+            const raw = data?.orders ?? []
+            normalizeAndSetOrders(raw)
+        } catch (err: any) {
+            setError(err.message || "Error desconocido")
+        } finally {
+            setLoading(false)
+        }
+    }, [])
 
-                const raw = data?.orders ?? []
+    // 🔍 función para buscar órdenes
+    const handleSearch = useCallback(async (term: string) => {
+        if (!term) {
+            fetchOrders()
+            return
+        }
 
-                const normalized: Order[] = raw.map((o: any) => ({
-                    order_id: Number(o.order_id),
+        try {
+            const res = await fetch(`/api/searchAdmin/orders?q=${encodeURIComponent(term)}`)
+            if (!res.ok) throw new Error("Error al buscar órdenes")
+            const data = await res.json()
+            const raw = data?.orders ?? []
+            normalizeAndSetOrders(raw)
+        } catch (err: any) {
+            console.error("Error en búsqueda:", err)
+        }
+    }, [fetchOrders])
+
+    // 🧩 función de normalización compartida
+    const normalizeAndSetOrders = (raw: any[]) => {
+        const normalized: Order[] = raw.map((o: any) => ({
+            order_id: Number(o.order_id),
                     mp_payment_id: Number(o.mp_payment_id),
+                    payment_id: Number(o.payment_id),
                     user_id: Number(o.user_id),
                     user_name: o.user_name ?? o.name ?? "",
                     user_email: o.user_email ?? "",
@@ -50,16 +78,12 @@ export default function OrdersPage() {
                     },
                 }))
 
-                setOrders(normalized)
-            } catch (err: any) {
-                setError(err.message || "Error desconocido")
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchOrders()
-    }, [])
+        setOrders(normalized)
+    }
 
+    useEffect(() => {
+        fetchOrders()
+    }, [fetchOrders])
     const handleUpdateStatus = async (orderId: number, newStatus: OrderStatus) => {
         try {
             const res = await fetch(`/api/admin/orders/${orderId}`, {
@@ -116,6 +140,15 @@ export default function OrdersPage() {
     return (
         <div className={styles["container"]}>
             <h1 className={styles["title"]}>Órdenes</h1>
+
+            {/* 🔍 Barra de búsqueda */}
+            <SearchBarAdmin
+                onSearch={handleSearch}
+                placeholder="Buscar por ID, email o nombre de usuario..."
+                debounceMs={400}
+                minChars={1}
+            />
+
 
             <div className={styles["table"]}>
                 <div className={styles["table-header"]}>

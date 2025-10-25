@@ -43,7 +43,7 @@ export async function GET(req: Request) {
                     'address_id', a.address_id,
                     'street', a.street,
                     'city', a.city,
-                    'state', a.state,
+                    'province', a.province,
                     'zip_code', a.zip_code,
                     'country', a.country,
                     'is_default', a.is_default
