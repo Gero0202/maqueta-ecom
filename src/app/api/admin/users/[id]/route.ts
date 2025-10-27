@@ -19,7 +19,6 @@ export async function PUT(req: Request, { params }: Params) {
       )
     }
 
-    // Verificamos que el usuario autenticado sea admin
     const authUser = await getAuthUser()
     if (!authUser || authUser.role !== "admin") {
       return NextResponse.json(
@@ -28,7 +27,6 @@ export async function PUT(req: Request, { params }: Params) {
       )
     }
 
-    // Datos que puede editar un admin
     const { name, username, email, phone, avatar, role } =
       (await req.json()) as {
         name?: string
@@ -49,7 +47,6 @@ export async function PUT(req: Request, { params }: Params) {
       updated_at: new Date(),
     }
 
-    // Filtrar nulos/undefined
     const entries = Object.entries(fields).filter(
       ([, value]) => value !== undefined && value !== null
     )
@@ -61,7 +58,6 @@ export async function PUT(req: Request, { params }: Params) {
       )
     }
 
-    // ✅ Validaciones adicionales
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { message: "Formato de email inválido" },
@@ -83,7 +79,6 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    // Verificar username único si viene actualizado
     if (username) {
       const check = await pool.query(
         "SELECT user_id FROM users WHERE username = $1",
@@ -110,7 +105,6 @@ export async function PUT(req: Request, { params }: Params) {
       }
     }
 
-    // Construir SQL dinámico
     const setClause = entries
       .map(([key], index) => `${key} = $${index + 1}`)
       .join(", ")
@@ -122,7 +116,6 @@ export async function PUT(req: Request, { params }: Params) {
       [...values, userId]
     )
 
-    // Ahora volvemos a consultar al usuario con sus direcciones
     const result = await pool.query(
       `SELECT 
         u.user_id, u.username, u.name, u.email, u.role, u.created_at, 

@@ -109,7 +109,6 @@ export async function POST(req: Request) {
             }
         }
 
-        // ❌ Evitar duplicados por nombre
         const duplicateCheck = await pool.query(
             "SELECT 1 FROM products WHERE LOWER(name) = LOWER($1) LIMIT 1",
             [trimmedName]

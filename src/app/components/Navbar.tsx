@@ -88,6 +88,12 @@ export default function Navbar() {
                 </Link>
               </li>
 
+              <li className={styles["navbar__item"]}>
+                <Link href="/configurationp" className={styles["navbar__link"]}>
+                  ⚙️ Configuracion
+                </Link>
+              </li>
+
               {/* 🚪 Logout */}
               <li className={styles["navbar__item"]}>
                 <button

@@ -1,4 +1,3 @@
-// src/app/api/admin/mp/paymentsOrderAdmin/[orderId]/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/app/lib/db";
 import { getAuthUser } from "@/app/lib/auth";
@@ -18,29 +17,28 @@ export async function GET(req: Request, { params }: Params) {
 
         const { orderId } = await params;
 
-        // Traemos el pago asociado a la orden y la info del usuario
         const res = await client.query(
             `
-      SELECT 
-        p.mp_payment_id,
-        p.status AS payment_status,
-        p.status_detail,
-        p.transaction_amount,
-        p.net_received_amount,
-        p.payer_email,
-        p.payer_dni,
-        p.currency_id,
-        p.payment_method,
-        p.installments,
-        p.date_created,
-        p.date_approved,
-        u.user_id,
-        u.name AS user_name,
-        u.email AS user_email
-      FROM payments p
-      JOIN orders o ON o.mp_payment_id = p.mp_payment_id
-      JOIN users u ON u.user_id = o.user_id
-      WHERE o.order_id = $1
+            SELECT 
+                p.mp_payment_id,
+                p.status AS payment_status,
+                p.status_detail,
+                p.transaction_amount,
+                p.net_received_amount,
+                p.payer_email,
+                p.payer_dni,
+                p.currency_id,
+                p.payment_method,
+                p.installments,
+                p.date_created,
+                p.date_approved,
+                u.user_id,
+                u.name AS user_name,
+                u.email AS user_email
+            FROM payments p
+            JOIN orders o ON o.mp_payment_id = p.mp_payment_id
+            JOIN users u ON u.user_id = o.user_id
+            WHERE o.order_id = $1
       `,
             [orderId]
         );
@@ -51,13 +49,12 @@ export async function GET(req: Request, { params }: Params) {
 
         const payment = res.rows[0];
 
-        // Traemos los items de la orden
         const itemsRes = await client.query(
             `
-      SELECT oi.product_id, pr.name, oi.quantity, oi.price
-      FROM order_items oi
-      JOIN products pr ON pr.product_id = oi.product_id
-      WHERE oi.order_id = $1
+            SELECT oi.product_id, pr.name, oi.quantity, oi.price
+            FROM order_items oi
+            JOIN products pr ON pr.product_id = oi.product_id
+            WHERE oi.order_id = $1
       `,
             [orderId]
         );

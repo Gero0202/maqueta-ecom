@@ -16,7 +16,7 @@ export default function PaymentSummaryModal({
 
 }: PaymentSummaryModalProps) {
     const { currentUser } = useAuth()
-    const isAdmin = currentUser?.role === "admin" // o currentUser?.isAdmin
+    const isAdmin = currentUser?.role === "admin" 
     if (!isOpen) return null;
 
     return (

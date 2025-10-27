@@ -71,7 +71,6 @@ export async function GET(req: Request) {
 
     const ordersRes = await client.query(query, params);
 
-    // Mapeo de resultados para agrupar ítems por orden
     const ordersMap = new Map<number, any>();
 
     for (const row of ordersRes.rows) {
@@ -97,7 +96,6 @@ export async function GET(req: Request) {
         });
       }
 
-      // Agrega el ítem a la orden correspondiente
       if (row.product_id) {
         ordersMap.get(row.order_id).items.push({
           product_id: row.product_id,

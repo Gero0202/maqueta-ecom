@@ -47,7 +47,7 @@ const CreateProductModal: React.FC<CreateProductProps> = ({ onClose, onSave }) =
             <div className={styles['modal-content']}>
                 <h2>Crear un producto</h2>
                 <form onSubmit={handleSubmit}>
-                    
+
                     <input name="name" onChange={handleChange} value={formData.name} type="text" placeholder="Nombre del producto" required />
                     <p>Precio</p>
                     <input name="price" onChange={handleChange} value={formData.price} type="number" min={0} step={0.01} placeholder="Precio" required />

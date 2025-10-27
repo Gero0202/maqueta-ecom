@@ -41,11 +41,6 @@ export default function UsersPage() {
       const res = await fetch("/api/users")
       if (!res.ok) throw new Error("Error al obtener los users")
       const data = await res.json()
-      // const normalized: User[] = data.map((u: any) => ({
-      //   ...u,
-      //   addresses: Array.isArray(u.addresses) ? u.addresses : []
-      // }))
-      // setUsers(normalized)
       const raw = data.users ?? []
       normalizedAndSetUsers(raw)
     } catch (error: any) {
@@ -64,11 +59,6 @@ export default function UsersPage() {
       const res = await fetch(`/api/searchAdmin/users?q=${encodeURIComponent(term)}`)
       if (!res.ok) throw new Error("Error al buscar los users")
       const data = await res.json()
-      // const normalized: User[] = data.users.map((u: any) => ({
-      //   ...u,
-      //   addresses: Array.isArray(u.addresses) ? u.addresses : []
-      // }))
-      // setUsers(normalized)
       const raw = data.users ?? []
       normalizedAndSetUsers(raw)
     } catch (error: any) {

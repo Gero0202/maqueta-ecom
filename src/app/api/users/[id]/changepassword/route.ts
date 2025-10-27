@@ -9,6 +9,9 @@ interface Params {
     }>
 }
 
+const PASSWORD_MIN_LENGTH = 10;
+const strongPasswordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{"+PASSWORD_MIN_LENGTH+",})");
+
 export async function PUT(req: Request, { params }: Params) {
     try {
         const { id } = await params
@@ -41,6 +44,13 @@ export async function PUT(req: Request, { params }: Params) {
                 { message: "Faltan datos" },
                 { status: 400 }
             )
+        }
+
+        if (!strongPasswordRegex.test(newPassword)) {
+            // El mensaje de error también se actualiza para reflejar el cambio
+            return NextResponse.json({ 
+                message: `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.` 
+            }, { status: 400 });
         }
 
         if (currentPassword === newPassword) {

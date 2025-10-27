@@ -22,9 +22,7 @@ export default function SearchBarAdmin({
   const firstRun = useRef(true)
   const debounceRef = useRef<number | null>(null)
 
-  // Ejecuta búsqueda con debounce cuando el term cambia
   useEffect(() => {
-    // no llamar onSearch en el primer render si está vacío
     if (firstRun.current) {
       firstRun.current = false
       return
@@ -38,14 +36,14 @@ export default function SearchBarAdmin({
       if (term.trim().length === 0) {
         setError(null)
         setLoading(false)
-        onSearch("") // reset en la página (mostrar todo)
+        onSearch("")
         return
       }
 
       if (term.trim().length < minChars) {
         setError(`Ingresá al menos ${minChars} caracter${minChars > 1 ? "es" : ""}`)
         setLoading(false)
-        onSearch("") // no filtrar todavía
+        onSearch("")
         return
       }
 

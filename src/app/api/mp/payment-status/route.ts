@@ -1,4 +1,3 @@
-// src/app/api/mp/payment-status/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { payment } from "@/app/lib/mp/mp.config";
 

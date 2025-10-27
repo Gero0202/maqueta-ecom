@@ -119,6 +119,7 @@ DELETE /api/cart/items/[productId]
 # Especificas
 
 - Cambiar las **cateogrias** en api/products/route.ts -> POST 
+- Agregar ngrok para probar endpoints de mercadopago
 
 ---
 
@@ -276,5 +277,21 @@ ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
 
 ALTER TABLE payments
 ADD COLUMN rejection_notified BOOLEAN DEFAULT FALSE;
+
+
+---
+
+# VARIABLES
+
+DATABASE_URL=
+JWT_SECRET=
+GOOGLE_PASS=
+GOOGLE_EMAIL=
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_BASE_URL=
+MP_WEBHOOK_SECRET=
+MP_ACCESS_TOKEN=
+FRONT_URL=
+BACK_URL=
 
 

@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useError } from "../context/ErrorContext";
 import toast from "react-hot-toast";
 
-
+const PASSWORD_MIN_LENGTH = 10; 
+const strongPasswordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{"+PASSWORD_MIN_LENGTH+",})");
 
 export default function Register() {
     const { showError } = useError()
     const [loading, setLoading] = useState(false)
-    // const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [form, setForm] = useState({
         username: "",
         name: "",
@@ -30,7 +30,7 @@ export default function Register() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
-        // setErrorMessage(null)
+      
 
 
         if (!form.username || form.username.length < 3 || form.username.length > 50) {
@@ -49,8 +49,8 @@ export default function Register() {
             return;
         }
 
-        if (!form.password || form.password.length < 8) {
-            showError("La contraseña debe contener al menos 6 caracteres.");
+        if (!form.password || !strongPasswordRegex.test(form.password)) {
+            showError(`La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.`);
             return;
         }
 
@@ -104,9 +104,9 @@ export default function Register() {
             <form onSubmit={handleRegister} className={styles["register-form"]}>
                 <h2>Crea tu cuenta</h2>
 
-                {/* {errorMessage && (
-                    <p className={styles["error-mensaje-formulario"]}>{errorMessage}</p>
-                )} */}
+                <p style={{ fontSize: "13px" }}>
+                    Contraseña: Mínimo {PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.
+                </p>
 
                 <input
                     type="text"

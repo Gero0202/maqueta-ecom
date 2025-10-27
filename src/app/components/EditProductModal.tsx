@@ -103,6 +103,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose, o
                         required
                         className={styles['select-genre']}
                     >
+                        {/* CAMBIAR CATEOGRIAS */}
                         <option value="">Seleccioná una categoría</option>
                         <option value="accesorios">Accesorios</option>
                         <option value="ropa">Ropa</option>

@@ -52,6 +52,8 @@ export async function GET(req: Request, { params }: Params) {
         const order: Order & { user_name: string; user_email: string } = {
             order_id: firstRow.order_id,
             user_id: firstRow.user_id,
+            payment_id: firstRow.payment_id,
+            mp_payment_id: firstRow.mp_payment_id,
             total_amount: Number(firstRow.total),
             status: firstRow.status,
             created_at: firstRow.created_at,
@@ -110,7 +112,6 @@ export async function PATCH(req: Request, { params }: Params) {
             );
         }
 
-        // Actualizamos el status sin restricciones
         const result = await client.query(
             `
             UPDATE orders
@@ -127,7 +128,6 @@ export async function PATCH(req: Request, { params }: Params) {
 
         const updatedOrder = result.rows[0];
 
-        // Traemos user_name, user_email y items igual que en GET
         const detailsRes = await client.query(
             `
             SELECT
@@ -178,7 +178,6 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 
-//DELETE
 export async function DELETE(req: Request, { params }: Params) {
     const client = await pool.connect();
 
@@ -190,7 +189,6 @@ export async function DELETE(req: Request, { params }: Params) {
 
         const { id } = await params;
 
-        // 1. Verificar si la orden existe
         const orderResult = await client.query(
             `SELECT status FROM orders WHERE order_id = $1`,
             [id]

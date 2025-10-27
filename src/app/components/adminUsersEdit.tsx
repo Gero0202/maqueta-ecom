@@ -56,8 +56,8 @@ export default function EditUserModal({ user, onClose, onSave }: EditUserModalPr
     <div className={styles["modal-overlay"]}>
       <div className={styles["modal-content"]}>
         <h2 className={styles["title-h2"]}>Editar Usuario</h2>
-        <form  className={styles["form"]} onSubmit={handleSubmit}>
-            <p>Username</p>
+        <form className={styles["form"]} onSubmit={handleSubmit}>
+          <p>Username</p>
           <input
             name="username"
             value={formData.username || ""}

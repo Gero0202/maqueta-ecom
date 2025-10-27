@@ -21,7 +21,6 @@ export default function SearchBar() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // 🔁 Debounce: espera 400ms después de dejar de escribir
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (query.trim().length >= 3) {

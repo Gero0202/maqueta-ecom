@@ -12,12 +12,12 @@ export async function POST(req: Request) {
 
         // 📩 1️⃣ Leer el body que envía el CheckoutButton
         const body = await req.json();
-        console.log("📦 BODY RECIBIDO:", body); // <---- AGREGAR ESTO
+        console.log("📦 BODY RECIBIDO:", body);
 
         const { addressId } = body;
-        if ( !addressId) {
+        if (!addressId) {
             return NextResponse.json({ message: "Faltan datos del carrito o dirección" }, { status: 400 })
-            
+
         }
 
         //1️⃣ Traemos el carrito activo

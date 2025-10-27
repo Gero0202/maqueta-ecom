@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
-import styles from "@/app/styles/createAddress.module.css"; 
+import styles from "@/app/styles/createAddress.module.css";
 
 interface Props {
     onClose: () => void;
-    onCreated: () => void; 
+    onCreated: () => void;
 }
 
 export default function CreateAddress({ onClose, onCreated }: Props) {
@@ -52,8 +52,8 @@ export default function CreateAddress({ onClose, onCreated }: Props) {
             }
 
             toast.success("Dirección creada correctamente");
-            onCreated(); 
-            onClose();   
+            onCreated();
+            onClose();
         } catch (err) {
             toast.error("Error en el servidor, intenta de nuevo");
         } finally {
@@ -75,7 +75,7 @@ export default function CreateAddress({ onClose, onCreated }: Props) {
                     <input name="province" placeholder="Provincia" value={form.province} onChange={handleChange} />
                     <input name="zip_code" placeholder="Código postal" value={form.zip_code} onChange={handleChange} />
                     <input name="country" placeholder="País" value={form.country} onChange={handleChange} />
-                    <input name="description" placeholder="Descripcion" value={form.description} onChange={handleChange}/>
+                    <input name="description" placeholder="Descripcion" value={form.description} onChange={handleChange} />
                 </div>
                 <div className={styles["modal-footer"]}>
                     <button className={`${styles["cancel"]}`} onClick={onClose}>Cancelar</button>

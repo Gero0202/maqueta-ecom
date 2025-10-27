@@ -1,3 +1,5 @@
+// ESTO ESTA SIN USAR
+
 import pool from "@/app/lib/db";
 import { NextResponse } from "next/server";
 

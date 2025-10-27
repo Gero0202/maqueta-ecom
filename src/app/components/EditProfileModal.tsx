@@ -8,24 +8,24 @@ type Props = {
     username: string
     phone?: string
     avatar: string
-    
+
     onClose: () => void
     onSave: (data: {
         name: string
         username: string
         phone?: string
         avatar: string
-        
+
     }) => void
 }
 
-export default function EditProfileModal({ name, username, phone ,avatar, onClose, onSave }: Props) {
+export default function EditProfileModal({ name, username, phone, avatar, onClose, onSave }: Props) {
     const [formData, setFormData] = useState({
         name: name || '',
         username: username || '',
         phone: phone || '',
         avatar: avatar || '',
-        
+
     })
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -36,7 +36,7 @@ export default function EditProfileModal({ name, username, phone ,avatar, onClos
         }))
     }
 
-    
+
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -69,7 +69,7 @@ export default function EditProfileModal({ name, username, phone ,avatar, onClos
                         required
                         className={styles["edit-input"]}
                     />
-                     <input
+                    <input
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
@@ -85,7 +85,7 @@ export default function EditProfileModal({ name, username, phone ,avatar, onClos
                         placeholder="URL de tu imagen"
                         className={styles["edit-input"]}
                     />
-                                       
+
 
                     <div className={styles["button-group"]}>
                         <button type="submit" className={styles["save-button"]}>Guardar</button>

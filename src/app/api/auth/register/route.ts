@@ -13,6 +13,8 @@ interface RegisterData {
     phone?: string;
 }
 
+const PASSWORD_MIN_LENGTH = 10;
+const strongPasswordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{" + PASSWORD_MIN_LENGTH + ",})");
 
 export async function POST(req: Request) {
     const client = await pool.connect();
@@ -37,16 +39,23 @@ export async function POST(req: Request) {
             cleanName.length < 2 ||
             cleanName.length > 70 ||
             !cleanEmail ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) ||
             !password ||
-            password.length < 8 ||
+            !strongPasswordRegex.test(password) ||
             (cleanPhone && !/^[0-9+\-\s()]{6,20}$/.test(cleanPhone))
         ) {
             await client.query("ROLLBACK");
+
+            let message = "Datos de registro inválidos. Verifica los campos: username, nombre, email, y teléfono. ";
+
+            if (!password || !strongPasswordRegex.test(password)) {
+                message = `La contraseña es inválida. Debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.`;
+            } else if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+                message = "Email inválido.";
+            }
+
             return NextResponse.json(
-                {
-                    message:
-                        "Datos de registro inválidos. Verifica los campos: username, nombre, email, contraseña y teléfono.",
-                },
+                { message: message },
                 { status: 400 }
             );
         }
@@ -152,7 +161,7 @@ export async function POST(req: Request) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error("❌ Error en register:", error); // 👈 agrega esto
+        console.error("❌ Error en register:", error); 
 
         return NextResponse.json(
             { message: "Error interno del servidor al registrar usuario." },

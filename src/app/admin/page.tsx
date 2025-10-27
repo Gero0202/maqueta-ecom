@@ -14,12 +14,10 @@ export default function AdminDashboard() {
     const [usersCount, setUsersCount] = useState<number>(0);
 
     useEffect(() => {
-        // Traer resumen de ventas
         fetch("/api/admin/sales/summary")
             .then((res) => res.json())
             .then(setSummary);
 
-        // Traer usuarios
         fetch("/api/users")
             .then((res) => res.json())
             .then((data) => setUsersCount(data.length));

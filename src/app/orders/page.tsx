@@ -51,7 +51,6 @@ export default function OrdersPage() {
             <span>Fecha: {new Date(order.created_at).toLocaleDateString()}</span>
           </div>
 
-          {/* 📍 Sección de dirección */}
           {order.address && (
             <div className={styles.addressSection}>
               <h4>Dirección de entrega:</h4>

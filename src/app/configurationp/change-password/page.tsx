@@ -1,11 +1,13 @@
 'use client'
-import MainLayout from "@/app/components/MainLayout";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "@/app/styles/changePassword.module.css"
 import toast from "react-hot-toast";
 import { useError } from "@/app/context/ErrorContext";
+
+
+const PASSWORD_MIN_LENGTH = 10;
 
 export default function ChangePassword() {
     const { setCurrentUser, currentUser, loading: authLoading } = useAuth()
@@ -18,7 +20,7 @@ export default function ChangePassword() {
         confirmPassword: ""
     })
 
-    
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !currentUser) {
@@ -29,13 +31,42 @@ export default function ChangePassword() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
-        
+
+    }
+
+    const validateForm = () => {
+        const { currentPassword, newPassword, confirmPassword } = formData;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showError("Todos los campos son obligatorios.");
+            return false;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showError("Las contraseñas nuevas no coinciden");
+            return false;
+        }
+
+        if (newPassword.length < PASSWORD_MIN_LENGTH) {
+            showError(`La nueva contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.`);
+            return false;
+        }
+
+        if (currentPassword === newPassword) {
+            showError("La nueva contraseña no puede ser igual a la actual");
+            return false;
+        }
+
+        return true;
     }
 
     const updatePassword = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!currentUser) return
+        if (!currentUser || isSaving) return
+        if (!validateForm()) return
+
+        setIsSaving(true);
 
         if (formData.newPassword !== formData.confirmPassword) {
             showError("Las contraseñas no coinciden")
@@ -64,47 +95,67 @@ export default function ChangePassword() {
             toast.success("Contraseña actualizada con exito")
             setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" })
 
-            router.push("/")
+            setTimeout(() => {
+                router.push("/")
+            }, 1500);
         } catch (error) {
             showError("Error del servidor, intente mas tarde")
-            
+        } finally {
+            setIsSaving(false);
         }
     }
 
-    return (
-        <MainLayout>
-            <div className={styles["password-wrapper"]}>
-                <h2 className={styles["password-title"]}>Cambiar contraseña</h2>
-                <form onSubmit={updatePassword} className={styles["password-form"]}>
-                    <input
-                        type="password"
-                        name="currentPassword"
-                        value={formData.currentPassword}
-                        onChange={handleChange}
-                        placeholder="Contraseña actual"
-                        required
-                    />
-                    <input
-                        type="password"
-                        name="newPassword"
-                        value={formData.newPassword}
-                        onChange={handleChange}
-                        placeholder="Nueva contraseña"
-                        required
-                    />
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="Repita la nueva contraseña"
-                        required />
-                    <button type="submit" className={styles["submit-button"]}>Guardar</button>
-                   
-                  
-                </form>
+    if (authLoading || !currentUser) {
+        return (
+            <div>
+                <p>Cargando...</p>
             </div>
+        );
+    }
 
-        </MainLayout>
+    return (
+        <div className={styles["password-wrapper"]}>
+            <h2 className={styles["password-title"]}>Cambiar contraseña</h2>
+            <form onSubmit={updatePassword} className={styles["password-form"]}>
+                <p>
+                    *Requisito: Mínimo {PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.
+                </p>
+                <input
+                    type="password"
+                    name="currentPassword"
+                    value={formData.currentPassword}
+                    onChange={handleChange}
+                    placeholder="Contraseña actual"
+                    required
+                />
+                <input
+                    type="password"
+                    name="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    placeholder="Nueva contraseña"
+                    required
+                />
+                <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    minLength={PASSWORD_MIN_LENGTH} 
+                    placeholder="Repita la nueva contraseña"
+                    required />
+                <button 
+                    type="submit" 
+                    className={styles["submit-button"]}
+                    disabled={isSaving}
+                >
+                {isSaving ? "Guardando..." : "Guardar"}
+                </button>
+
+
+            </form>
+        </div>
+
     )
 }

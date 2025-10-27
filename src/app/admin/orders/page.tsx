@@ -11,7 +11,7 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-     // 🔍 función para traer todas las órdenes (cuando no hay búsqueda)
+    // 🔍 función para traer todas las órdenes (cuando no hay búsqueda)
     const fetchOrders = useCallback(async () => {
         try {
             const res = await fetch("/api/admin/orders")
@@ -48,35 +48,34 @@ export default function OrdersPage() {
     const normalizeAndSetOrders = (raw: any[]) => {
         const normalized: Order[] = raw.map((o: any) => ({
             order_id: Number(o.order_id),
-                    mp_payment_id: Number(o.mp_payment_id),
-                    payment_id: Number(o.payment_id),
-                    user_id: Number(o.user_id),
-                    user_name: o.user_name ?? o.name ?? "",
-                    user_email: o.user_email ?? "",
-                    items: Array.isArray(o.items)
-                        ? o.items.map((it: any) => ({
-                            product_id: Number(it.product_id),
-                            quantity: Number(it.quantity),
-                            price: Number(it.price),
-                            stock: it.stock !== undefined ? Number(it.stock) : undefined,
-                            image_url: it.image_url ?? it.image ?? "",
-                            name: it.name ?? it.product_name ?? "",
-                        }))
-                        : [],
-                    total_amount: Number(o.total_amount ?? o.total ?? 0),
-                    status: o.status,
-                    created_at: o.created_at,
-                    updated_at: o.updated_at ?? undefined,
-                    address: {
-                        street: o.address?.street ?? "", // ✅ ¡CORREGIDO!
-                        city: o.address?.city ?? "",  // ✅ ¡CORREGIDO!
-                        province: o.address?.province ?? "", // ✅ ¡CORREGIDO!
-                        zip_code: o.address?.zip_code ?? "", // ✅ ¡CORREGIDO!
-                        // Ojo: En el backend le pusiste 'number', así que lo buscamos como 'o.address?.number'
-                        number_house: o.address?.number ?? "", // ✅ ¡CORREGIDO!
-                        description: o.address?.description ?? "", // ✅ ¡CORREGIDO!
-                    },
+            mp_payment_id: Number(o.mp_payment_id),
+            payment_id: Number(o.payment_id),
+            user_id: Number(o.user_id),
+            user_name: o.user_name ?? o.name ?? "",
+            user_email: o.user_email ?? "",
+            items: Array.isArray(o.items)
+                ? o.items.map((it: any) => ({
+                    product_id: Number(it.product_id),
+                    quantity: Number(it.quantity),
+                    price: Number(it.price),
+                    stock: it.stock !== undefined ? Number(it.stock) : undefined,
+                    image_url: it.image_url ?? it.image ?? "",
+                    name: it.name ?? it.product_name ?? "",
                 }))
+                : [],
+            total_amount: Number(o.total_amount ?? o.total ?? 0),
+            status: o.status,
+            created_at: o.created_at,
+            updated_at: o.updated_at ?? undefined,
+            address: {
+                street: o.address?.street ?? "",
+                city: o.address?.city ?? "",
+                province: o.address?.province ?? "",
+                zip_code: o.address?.zip_code ?? "",
+                number_house: o.address?.number ?? "",
+                description: o.address?.description ?? "",
+            },
+        }))
 
         setOrders(normalized)
     }
@@ -100,7 +99,6 @@ export default function OrdersPage() {
 
             const { order } = await res.json();
 
-            // Actualizamos la lista de orders en el frontend
             setOrders((prev) =>
                 prev.map((o) => (o.order_id === order.order_id ? order : o))
             );
@@ -141,7 +139,6 @@ export default function OrdersPage() {
         <div className={styles["container"]}>
             <h1 className={styles["title"]}>Órdenes</h1>
 
-            {/* 🔍 Barra de búsqueda */}
             <SearchBarAdmin
                 onSearch={handleSearch}
                 placeholder="Buscar por ID, email o nombre de usuario..."

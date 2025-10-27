@@ -19,7 +19,7 @@ export default function ProductsPage() {
             const res = await fetch("/api/products")
             if (!res.ok) throw new Error("Error al cargar productos")
             const data = await res.json()
-            setProducts(data.products) // depende de cómo devuelvas la respuesta
+            setProducts(data.products)
             setFilteredProducts(data.products);
         } catch (error) {
             console.error(error)
@@ -32,7 +32,6 @@ export default function ProductsPage() {
         fetchProducts()
     }, [])
 
-    // 👇 función que recibe el texto desde el SearchBarAdmin
     const handleSearch = useCallback(async (term: string) => {
         if (!term) {
             setFilteredProducts(products);
@@ -62,7 +61,7 @@ export default function ProductsPage() {
             return
         }
 
-        await fetchProducts() // refrescar lista
+        await fetchProducts()
     }
 
     const handleDelete = async (id: number) => {
@@ -98,7 +97,6 @@ export default function ProductsPage() {
         <div className={styles["products-page"]}>
             <h1 className={styles["title"]}>Administrar productos</h1>
 
-            {/* 👇 nueva barra de búsqueda con debounce */}
             <SearchBarAdmin
                 onSearch={handleSearch}
                 placeholder="Buscar producto..."
@@ -144,7 +142,6 @@ export default function ProductsPage() {
                 </div>
             )}
 
-            {/* Modal */}
             {selectedProduct && (
                 <EditProductModal
                     product={selectedProduct}

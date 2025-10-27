@@ -67,7 +67,8 @@ export async function GET(req: Request) {
     }
 }
 
-
+const PASSWORD_MIN_LENGTH = 10;
+const strongPasswordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{" + PASSWORD_MIN_LENGTH + ",})");
 
 export async function POST(req: Request) {
     try {
@@ -81,9 +82,16 @@ export async function POST(req: Request) {
 
         const { name, username, email, password, avatar, phone, role, is_verified } = (await req.json()) as UserData
 
-        if (!name || !username || username.length > 50 || !email || !password) {
+        if (!name || !username || username.length > 50 || !email ) {
             return NextResponse.json(
                 { message: "Faltan algunos de los campos obligatorios: Nombre, email y contraseña" },
+                { status: 400 }
+            )
+        }
+
+        if (!password || !strongPasswordRegex.test(password)) {
+            return NextResponse.json(
+                { message: `La contraseña es inválida. Debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúsculas, minúsculas y números.` },
                 { status: 400 }
             )
         }
@@ -96,7 +104,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "El email no es válido" }, { status: 400 })
         }
 
-        if (password.length < 6) {
+        if (password.length < 10) {
             return NextResponse.json({ message: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 })
         }
 

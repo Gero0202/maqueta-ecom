@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter()
 
 
-    // Función para obtener datos del usuario online
     const refreshUser = async () => {
         try {
             const res = await fetch("/api/auth/online")

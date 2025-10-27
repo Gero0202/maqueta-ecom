@@ -39,13 +39,12 @@ export default function CartPage() {
     const [addresses, setAddresses] = useState<Address[]>([])
     const [selectedAddressId, setSelectedAddressId] = useState<number | "new" | null>(null)
     const [newAddress, setNewAddress] = useState({ street: "", city: "", province: "", zip_code: "", number_house: "", country: "" })
-    // const [cart, setCart] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     const { currentUser } = useAuth()
 
     useEffect(() => {
-        if (!currentUser) return; // espera a que currentUser se cargue
+        if (!currentUser) return;
         const fetchAddresses = async () => {
             try {
                 const res = await fetch(`/api/users/${currentUser.user_id}/addresses`);
@@ -56,14 +55,11 @@ export default function CartPage() {
                 setAddresses(validAddresses);
 
                 if (validAddresses.length > 0) {
-                    // 1. Busca la dirección que tiene is_default: true
                     const defaultAddress = validAddresses.find(addr => addr.is_default === true);
 
                     if (defaultAddress) {
-                        // 2. Si se encuentra, selecciona su ID
                         setSelectedAddressId(defaultAddress.address_id);
                     } else {
-                        // 3. Si no hay ninguna marcada como default (caso de fallback), selecciona la primera
                         setSelectedAddressId(validAddresses[0].address_id);
                     }
                 }
@@ -84,7 +80,6 @@ export default function CartPage() {
             if (!res.ok) throw new Error("Error al cargar el carrito")
             const data = await res.json()
             setCart(data.cart)
-            //setCart(data.cart?.items || [])
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -96,23 +91,6 @@ export default function CartPage() {
         fetchCart()
     }, [])
 
-    // 📌 Cargar direcciones del usuario
-    // const fetchAddresses = async () => {
-    //     try {
-    //         const res = await fetch(`/api/users/${currentUser!.user_id}/addresses`)
-    //         if (!res.ok) throw new Error("Error al cargar direcciones")
-    //         const data = await res.json()
-    //         setAddresses(data.addresses || [])
-    //         if (data.addresses?.length) setSelectedAddressId(data.addresses[0].address_id)
-    //     } catch (err: any) {
-    //         console.error(err)
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     fetchCart()
-    //     fetchAddresses()
-    // }, [])
 
     // 📌 Agregar nueva dirección
     const handleAddAddress = async (e: React.FormEvent) => {
@@ -247,10 +225,8 @@ export default function CartPage() {
                         >
                             {addresses.map((addr) => (
                                 <option key={addr.address_id} value={addr.address_id}>
-                                    {/* Usamos el formato "Etiqueta: Valor | Etiqueta: Valor" */}
                                     Calle: {addr.street} | Núm: {addr.number_house} | Ciudad: {addr.city} | Provincia: {addr.province} | CP: {addr.zip_code}
 
-                                    {/* OPCIONAL: Si es la dirección por defecto, puedes indicarlo */}
                                     {addr.is_default && " (Por Defecto)"}
                                 </option>
                             ))}
