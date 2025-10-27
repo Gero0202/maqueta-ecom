@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import styles from "@/app/styles/adminUsers.module.css"
 import EditUserModal from "@/app/components/adminUsersEdit"
 import CreateUserModal from "@/app/components/CreateUserModal"
+import SearchBarAdmin from "@/app/components/SearchBarAdmin"
 
 type Address = {
   address_id: number
@@ -35,26 +36,59 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
 
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch("/api/users")
-        if (!res.ok) throw new Error("Error al obtener usuarios")
-        const data = await res.json()
-        // Aseguramos addresses como array para cada usuario
-        const normalized: User[] = data.map((u: any) => ({
-          ...u,
-          addresses: Array.isArray(u.addresses) ? u.addresses : []
-        }))
-        setUsers(normalized)
-      } catch (err: any) {
-        setError(err.message || "Error desconocido")
-      } finally {
-        setLoading(false)
-      }
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/users")
+      if (!res.ok) throw new Error("Error al obtener los users")
+      const data = await res.json()
+      // const normalized: User[] = data.map((u: any) => ({
+      //   ...u,
+      //   addresses: Array.isArray(u.addresses) ? u.addresses : []
+      // }))
+      // setUsers(normalized)
+      const raw = data.users ?? []
+      normalizedAndSetUsers(raw)
+    } catch (error: any) {
+      setError(error.message || "Error desconocido")
+    } finally {
+      setLoading(false)
     }
-    fetchUsers()
   }, [])
+
+  const handleSearch = useCallback(async (term: string) => {
+    if (!term) {
+      fetchUsers()
+    }
+
+    try {
+      const res = await fetch(`/api/searchAdmin/users?q=${encodeURIComponent(term)}`)
+      if (!res.ok) throw new Error("Error al buscar los users")
+      const data = await res.json()
+      // const normalized: User[] = data.users.map((u: any) => ({
+      //   ...u,
+      //   addresses: Array.isArray(u.addresses) ? u.addresses : []
+      // }))
+      // setUsers(normalized)
+      const raw = data.users ?? []
+      normalizedAndSetUsers(raw)
+    } catch (error: any) {
+      setError(error.message || "Error desconocido")
+    }
+  }, [fetchUsers])
+
+  const normalizedAndSetUsers = (raw: any[]) => {
+    const normalized: User[] = raw.map((u: any) => ({
+      ...u,
+      addresses: Array.isArray(u.addresses) ? u.addresses : []
+    }))
+
+    setUsers(normalized)
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
+
 
   const handleSave = async (updatedUser: Partial<User>) => {
     if (!selectedUser) return
@@ -79,20 +113,20 @@ export default function UsersPage() {
     }
   }
 
-  const handleCreate = async (newUser: User) =>{
-     const res = await fetch("/api/users", {
+  const handleCreate = async (newUser: User) => {
+    const res = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newUser)
-     })
+    })
 
-     if (!res.ok) {
-       alert("error al crear un usuario")
-     }
+    if (!res.ok) {
+      alert("error al crear un usuario")
+    }
 
-     const data = await res.json()
+    const data = await res.json()
 
-     setUsers(prev => [data, ...prev])
+    setUsers(prev => [data, ...prev])
   }
 
   const handleDelete = async (id: number) => {
@@ -124,6 +158,13 @@ export default function UsersPage() {
   return (
     <div className={styles["container"]}>
       <h1 className={styles["title"]}>Usuarios</h1>
+
+      <SearchBarAdmin
+        onSearch={handleSearch}
+        placeholder="Buscar user por nombre o email"
+        debounceMs={400}
+        minChars={1}
+      />
 
       <button
         className={styles["btn-create"]}
