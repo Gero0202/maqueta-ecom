@@ -10,11 +10,12 @@ interface Address {
     address_id: number;
     street: string;
     city: string;
-    state?: string;
+    province: string;
     zip_code: string;
     number_house: string;
     country: string;
     is_default: boolean;
+    description: string
 }
 
 export default function ManageAddresses() {
@@ -88,7 +89,10 @@ export default function ManageAddresses() {
                     {addresses.map((addr) => (
                         <li key={addr.address_id} style={{ marginBottom: "1rem" }}>
                             <p>
-                                {addr.street} {addr.number_house}, {addr.city}, {addr.country}
+                                Calle: {addr.street} | Núm: {addr.number_house} | Ciudad: {addr.city} | Provincia: {addr.province} | CP: {addr.zip_code}
+                            </p>
+                            <p>
+                                Descripcion: {addr.description}
                             </p>
                             {addr.is_default && <strong>(Principal)</strong>}
                             <div>

@@ -274,4 +274,7 @@ ALTER TABLE orders ADD COLUMN payment_id INT REFERENCES payments(payment_id);
 ALTER TABLE payments
 ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
 
+ALTER TABLE payments
+ADD COLUMN rejection_notified BOOLEAN DEFAULT FALSE;
+
 

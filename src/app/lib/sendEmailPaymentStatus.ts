@@ -44,9 +44,9 @@ const sendEmailPaymentStatus = async ({
             <p>Tu pago fue aprobado correctamente. 🛒</p>
             <p><strong>Pedido #${orderId}</strong> por un total de <strong>${formattedAmount}</strong> está en proceso.</p>
             <p>Te avisaremos cuando tu pedido sea enviado.</p>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderId}"
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/"
                style="display:inline-block; padding:10px 20px; background:#2b6cb0; color:white; text-decoration:none; border-radius:5px; margin-top:10px;">
-               Ver mi pedido
+               Volver a la tienda
             </a>
             <p style="margin-top:20px; font-size:12px; color:#777;">
                 Gracias por confiar en <b>Mi tienda</b>.

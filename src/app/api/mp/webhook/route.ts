@@ -8,6 +8,7 @@ import { getAuthUser } from "@/app/lib/auth";
 
 export async function POST(req: Request) {
     const client = await pool.connect();
+    let inTransaction = false
 
     try {
         // 1️⃣ Validamos la firma
@@ -41,9 +42,10 @@ export async function POST(req: Request) {
             INSERT INTO payments (
                 mp_payment_id, cart_id, user_id, address_id, status, status_detail,
                 transaction_amount, net_received_amount, currency_id, payment_method,
-                installments, payer_email, payer_dni, description, date_created, date_approved, updated_at
+                installments, payer_email, payer_dni, description, date_created, date_approved, updated_at,
+                rejection_notified
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, NOW())
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, NOW(), FALSE)
             ON CONFLICT (mp_payment_id) DO UPDATE
             SET
                 status = EXCLUDED.status,
@@ -78,7 +80,7 @@ export async function POST(req: Request) {
         const paymentId = paymentRes.rows[0].payment_id
 
         console.log("💬 Notificación recibida. Payment ID:", result.dataId);
-        // console.log("🧾 PAYMENT DATA:", paymentData);
+        console.log("🧾 PAYMENT DATA:", paymentData);
 
         const userId = paymentData.metadata?.user_id;
         const cartId = paymentData.metadata?.cart_id;
@@ -100,6 +102,7 @@ export async function POST(req: Request) {
         // Datos del comprador (para email de MP)
         // const payerEmail = paymentData.payer?.email;
         // const payerName = paymentData.payer?.first_name || "Cliente";
+        //////////////////////////
 
         // Datos del comprador (para email de user ONLINE)
         const userRes = await client.query(
@@ -113,16 +116,20 @@ export async function POST(req: Request) {
 
         const userEmail = userRes.rows[0]?.email || null;
         const userName = userRes.rows[0]?.name || "Cliente";
+        /////////////////////////////////////////
+
         const amount = paymentData.transaction_amount;
 
 
         // 3️⃣ Guardamos la orden solo si el pago fue aprobado
         if (internalStatus === "paid") {
-            await client.query("BEGIN");
+            try {
+                await client.query("BEGIN");
+                inTransaction = true // ACTIVAMOS FLAG
 
-            // Creamos la orden en la tabla `orders`
-            const orderRes = await client.query(
-                `
+                // Creamos la orden en la tabla `orders`
+                const orderRes = await client.query(
+                    `
                 INSERT INTO orders (
                 user_id, 
                 total, 
@@ -150,64 +157,73 @@ export async function POST(req: Request) {
                 GROUP BY c.user_id
                 RETURNING order_id
                  `,
-                [internalStatus, paymentData.id, paymentId, addressId, cartId]
-            );
+                    [internalStatus, paymentData.id, paymentId, addressId, cartId]
+                );
 
-            const orderId = orderRes.rows[0].order_id;
+                const orderId = orderRes.rows[0].order_id;
 
-            // Copiamos los ítems del carrito a order_items
-            await client.query(
-                `
+                // Copiamos los ítems del carrito a order_items
+                await client.query(
+                    `
                 INSERT INTO order_items (order_id, product_id, quantity, price)
                 SELECT $1, product_id, quantity, unit_price
                 FROM cart_items
                 WHERE cart_id = $2
              `,
-                [orderId, cartId]
-            );
+                    [orderId, cartId]
+                );
 
-            // 🔻 Descontamos el stock de cada producto del carrito
-            await client.query(
-                `
+                // 🔻 Descontamos el stock de cada producto del carrito
+                await client.query(
+                    `
                 UPDATE products
                 SET stock = stock - ci.quantity
                 FROM cart_items ci
                 WHERE products.product_id = ci.product_id
                 AND ci.cart_id = $1
                 `,
-                [cartId]
-            );
+                    [cartId]
+                );
 
-            // Actualizamos estado del carrito
-            await client.query(
-                `UPDATE carts SET status = 'completed', updated_at = NOW() WHERE cart_id = $1`,
-                [cartId]
-            );
-
-            await client.query("COMMIT");
-            console.log("✅ Orden creada correctamente:", orderId);
-
-            // 📧 Enviar email de pago aprobado
-            const existingOrder = await client.query(
-                `SELECT notificado FROM orders WHERE mp_payment_id = $1`,
-                [paymentData.id]
-            );
-
-            const alreadyNotified = existingOrder.rows[0]?.notificado;
-
-            if (userEmail && !alreadyNotified) {
-                await sendEmailPaymentStatus({
-                    to: userEmail,
-                    name: userName,
-                    status: "approved",
-                    orderId,
-                    amount,
-                });
-
+                // Actualizamos estado del carrito
                 await client.query(
-                    `UPDATE orders SET notificado = true WHERE mp_payment_id = $1`,
+                    `UPDATE carts SET status = 'completed', updated_at = NOW() WHERE cart_id = $1`,
+                    [cartId]
+                );
+
+                await client.query("COMMIT");
+                inTransaction = false
+                console.log("✅ Orden creada correctamente:", orderId);
+
+                // 📧 Enviar email de pago aprobado
+                const existingOrder = await client.query(
+                    `SELECT notificado FROM orders WHERE mp_payment_id = $1`,
                     [paymentData.id]
                 );
+
+                const alreadyNotified = existingOrder.rows[0]?.notificado;
+
+                if (userEmail && !alreadyNotified) {
+                    await sendEmailPaymentStatus({
+                        to: userEmail,
+                        name: userName,
+                        status: "approved",
+                        orderId,
+                        amount,
+                    });
+
+                    await client.query(
+                        `UPDATE orders SET notificado = true WHERE mp_payment_id = $1`,
+                        [paymentData.id]
+                    );
+                }
+
+            } catch (error) {
+                if (inTransaction) {
+                    await client.query("ROLLBACK")
+                    console.warn("⚠️ ROLLBACK ejecutado debido a un error en la transacción (stock, orden, etc.).")
+                }
+                throw error
             }
 
         } else {
@@ -220,11 +236,11 @@ export async function POST(req: Request) {
 
             // 📧 Enviar email si fue rechazado
             if (internalStatus === "cancelled" && userEmail) {
-                const existingOrder = await client.query(
-                    `SELECT notificado FROM orders WHERE mp_payment_id = $1`,
+                const paymentNotificationRes = await client.query(
+                    `SELECT rejection_notified FROM payments WHERE mp_payment_id = $1`,
                     [paymentData.id]
                 );
-                const alreadyNotified = existingOrder.rows[0]?.notificado;
+                const alreadyNotified = paymentNotificationRes.rows[0]?.notificado;
 
                 if (!alreadyNotified) {
                     await sendEmailPaymentStatus({
@@ -234,7 +250,7 @@ export async function POST(req: Request) {
                     });
 
                     await client.query(
-                        `UPDATE orders SET notificado = true WHERE mp_payment_id = $1`,
+                        `UPDATE payments SET rejection_notified = true WHERE mp_payment_id = $1`,
                         [paymentData.id]
                     );
                 }
@@ -247,7 +263,11 @@ export async function POST(req: Request) {
             { status: 200 }
         );
     } catch (error) {
-        await client.query("ROLLBACK");
+        // await client.query("ROLLBACK");
+        if (inTransaction) {
+            await client.query("ROLLBACK");
+            console.warn("⚠️ ROLLBACK ejecutado en el catch final como salvaguarda.");
+        }
         console.error("❌ Error en el webhook:", error);
         return NextResponse.json({ message: "Error interno" }, { status: 500 });
     } finally {

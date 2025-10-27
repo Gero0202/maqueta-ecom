@@ -27,7 +27,8 @@ export async function GET(req: Request, { params }: RouteParams) {
         const result = await pool.query(
             `SELECT address_id, street, city, province, zip_code, number_house ,country, is_default, description
        FROM addresses
-       WHERE user_id = $1`,
+       WHERE user_id = $1
+       ORDER BY is_default DESC`,
             [userId]
         );
 

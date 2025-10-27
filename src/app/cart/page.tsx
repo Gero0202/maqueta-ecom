@@ -30,6 +30,7 @@ interface Address {
     zip_code: string
     country: string
     number_house: string
+    is_default: boolean
 }
 
 
@@ -44,21 +45,35 @@ export default function CartPage() {
     const { currentUser } = useAuth()
 
     useEffect(() => {
-    if (!currentUser) return; // espera a que currentUser se cargue
-    const fetchAddresses = async () => {
-        try {
-            const res = await fetch(`/api/users/${currentUser.user_id}/addresses`);
-            if (!res.ok) throw new Error("Error al cargar direcciones");
-            const data = await res.json();
-            setAddresses(data.addresses?.filter(Boolean) || [])
-            if (data.addresses?.length) setSelectedAddressId(data.addresses[0].address_id);
-        } catch (err: any) {
-            console.error(err);
-        }
-    };
+        if (!currentUser) return; // espera a que currentUser se cargue
+        const fetchAddresses = async () => {
+            try {
+                const res = await fetch(`/api/users/${currentUser.user_id}/addresses`);
+                if (!res.ok) throw new Error("Error al cargar direcciones");
+                const data = await res.json();
+                const validAddresses: Address[] = data.addresses?.filter(Boolean) || [];
 
-    fetchAddresses();
-}, [currentUser]);
+                setAddresses(validAddresses);
+
+                if (validAddresses.length > 0) {
+                    // 1. Busca la dirección que tiene is_default: true
+                    const defaultAddress = validAddresses.find(addr => addr.is_default === true);
+
+                    if (defaultAddress) {
+                        // 2. Si se encuentra, selecciona su ID
+                        setSelectedAddressId(defaultAddress.address_id);
+                    } else {
+                        // 3. Si no hay ninguna marcada como default (caso de fallback), selecciona la primera
+                        setSelectedAddressId(validAddresses[0].address_id);
+                    }
+                }
+            } catch (err: any) {
+                console.error(err);
+            }
+        };
+
+        fetchAddresses();
+    }, [currentUser]);
 
 
     // 📌 Cargar carrito
@@ -103,7 +118,7 @@ export default function CartPage() {
     const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            if (!currentUser) return; 
+            if (!currentUser) return;
             const res = await fetch(`/api/users/${currentUser.user_id}/addresses`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -232,7 +247,11 @@ export default function CartPage() {
                         >
                             {addresses.map((addr) => (
                                 <option key={addr.address_id} value={addr.address_id}>
-                                    {addr.street}, {addr.city}
+                                    {/* Usamos el formato "Etiqueta: Valor | Etiqueta: Valor" */}
+                                    Calle: {addr.street} | Núm: {addr.number_house} | Ciudad: {addr.city} | Provincia: {addr.province} | CP: {addr.zip_code}
+
+                                    {/* OPCIONAL: Si es la dirección por defecto, puedes indicarlo */}
+                                    {addr.is_default && " (Por Defecto)"}
                                 </option>
                             ))}
                             <option value="new"> + Agregar nueva dirección</option>

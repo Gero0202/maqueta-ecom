@@ -15,10 +15,11 @@ export default function CreateAddress({ onClose, onCreated }: Props) {
     const [form, setForm] = useState({
         street: "",
         city: "",
-        state: "",
+        province: "",
         zip_code: "",
         number_house: "",
         country: "",
+        description: ""
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +30,7 @@ export default function CreateAddress({ onClose, onCreated }: Props) {
         e.preventDefault();
         if (!currentUser) return;
 
-        if (!form.street || !form.city || !form.zip_code || !form.country || !form.number_house) {
+        if (!form.street || !form.city || !form.zip_code || !form.country || !form.number_house || !form.zip_code || !form.province) {
             toast.error("Completa todos los campos obligatorios");
             return;
         }
@@ -71,9 +72,10 @@ export default function CreateAddress({ onClose, onCreated }: Props) {
                     <input name="street" placeholder="Calle" value={form.street} onChange={handleChange} />
                     <input name="number_house" placeholder="Número" value={form.number_house} onChange={handleChange} />
                     <input name="city" placeholder="Ciudad" value={form.city} onChange={handleChange} />
-                    <input name="state" placeholder="Estado (opcional)" value={form.state} onChange={handleChange} />
+                    <input name="province" placeholder="Provincia" value={form.province} onChange={handleChange} />
                     <input name="zip_code" placeholder="Código postal" value={form.zip_code} onChange={handleChange} />
                     <input name="country" placeholder="País" value={form.country} onChange={handleChange} />
+                    <input name="description" placeholder="Descripcion" value={form.description} onChange={handleChange}/>
                 </div>
                 <div className={styles["modal-footer"]}>
                     <button className={`${styles["cancel"]}`} onClick={onClose}>Cancelar</button>

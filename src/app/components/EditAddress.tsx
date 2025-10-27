@@ -7,11 +7,12 @@ interface Address {
     address_id: number;
     street: string;
     city: string;
-    state?: string;
+    province: string;
     zip_code: string;
     number_house: string;
     country: string;
     is_default: boolean;
+    description?: string
 }
 
 interface EditAddressProps {
@@ -24,10 +25,11 @@ interface EditAddressProps {
 export default function EditAddress({ address, userId, onClose, onUpdated }: EditAddressProps) {
     const [street, setStreet] = useState(address.street);
     const [city, setCity] = useState(address.city);
-    const [state, setState] = useState(address.state || "");
+    const [province, setProvince] = useState(address.province);
     const [zipCode, setZipCode] = useState(address.zip_code);
     const [numberHouse, setNumberHouse] = useState(address.number_house);
     const [country, setCountry] = useState(address.country);
+    const [description, setDescription] = useState(address.description || "")
     const [loading, setLoading] = useState(false);
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -41,10 +43,11 @@ export default function EditAddress({ address, userId, onClose, onUpdated }: Edi
                 body: JSON.stringify({
                     street,
                     city,
-                    state,
+                    province,
                     zip_code: zipCode,
                     number_house: numberHouse,
                     country,
+                    description
                 }),
             });
 
@@ -96,9 +99,9 @@ export default function EditAddress({ address, userId, onClose, onUpdated }: Edi
                     <input
                         className={styles["form-input"]}
                         type="text"
-                        placeholder="Estado"
-                        value={state}
-                        onChange={(e) => setState(e.target.value)}
+                        placeholder="Provincia"
+                        value={province}
+                        onChange={(e) => setProvince(e.target.value)}
                     />
                     <input
                         className={styles["form-input"]}
@@ -115,6 +118,13 @@ export default function EditAddress({ address, userId, onClose, onUpdated }: Edi
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
                         required
+                    />
+                    <input
+                        className={styles["form-input"]}
+                        type="text"
+                        placeholder="Descripcion"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                     />
                     <div className={styles["modal-buttons"]}>
                         <button className={styles["button-main"]} type="submit" disabled={loading}>
